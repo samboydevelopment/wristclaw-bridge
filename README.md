@@ -1,6 +1,6 @@
-# OpenClaw Watch Skill
+# OpenClaw Watch
 
-Private OpenClaw skill that runs the local bridge used by the OpenClaw iPhone and Apple Watch companion app.
+Private/local OpenClaw plugin that runs the bridge used by the OpenClaw iPhone and Apple Watch companion app.
 
 The bridge stays private by default:
 
@@ -9,10 +9,22 @@ The bridge stays private by default:
 - It is intended to be exposed only through Tailscale Serve inside the user's tailnet.
 - It should not be exposed with Tailscale Funnel unless the user explicitly chooses that tradeoff.
 
+## Plugin Structure
+
+```text
+.codex-plugin/plugin.json       Plugin manifest
+skills/openclaw-watch/SKILL.md  Agent instructions
+scripts/setup.mjs               Config/token/LaunchAgent setup
+scripts/start-bridge.mjs        Starts the local bridge
+scripts/healthcheck.mjs         Checks the local bridge
+scripts/watch-bridge.mjs        HTTP bridge implementation
+references/                     Setup and security notes
+```
+
 ## Setup
 
 ```bash
-node scripts/setup.mjs setup
+npm run setup
 ```
 
 This creates private config at:
@@ -24,13 +36,13 @@ This creates private config at:
 ## Run
 
 ```bash
-node scripts/start-bridge.mjs
+npm start
 ```
 
 Then verify:
 
 ```bash
-curl http://127.0.0.1:8787/health
+npm run health
 ```
 
 ## Private Tailscale URL
@@ -50,7 +62,17 @@ The token printed by setup goes in the app's token field.
 ## Optional LaunchAgent
 
 ```bash
-node scripts/setup.mjs setup --launch-agent
+npm run setup:launch-agent
 launchctl load ~/Library/LaunchAgents/com.openclaw.watch-bridge.plist
 ```
 
+## Public Release Readiness
+
+This repo is safe to keep private while the bridge behavior is still being shaped. Before making it public:
+
+```bash
+npm run validate:plugin
+npm run scan:secrets
+```
+
+Review `references/security.md` and test from a fresh clone.

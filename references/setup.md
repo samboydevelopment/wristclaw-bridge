@@ -1,9 +1,25 @@
 # OpenClaw Watch Setup
 
+## Fresh Clone
+
+```bash
+git clone https://github.com/marciaris21/openclaw-watch-skill.git
+cd openclaw-watch-skill
+npm run validate:plugin
+npm run setup
+npm start
+```
+
+In another terminal:
+
+```bash
+npm run health
+```
+
 ## Configure
 
 ```bash
-node Skills/openclaw-watch/scripts/setup.mjs setup
+npm run setup
 ```
 
 This creates:
@@ -22,19 +38,13 @@ The config includes:
 ## Run
 
 ```bash
-node Skills/openclaw-watch/scripts/start-bridge.mjs
-```
-
-When this skill is installed as its own private repo, run the same command from the skill repo root:
-
-```bash
-node scripts/start-bridge.mjs
+npm start
 ```
 
 ## Health Check
 
 ```bash
-Scripts/healthcheck-bridge.sh
+npm run health
 ```
 
 ## Tailscale Serve
@@ -52,7 +62,7 @@ Use the resulting HTTPS URL in the iPhone app, ending in:
 ## Optional LaunchAgent
 
 ```bash
-node Skills/openclaw-watch/scripts/setup.mjs setup --launch-agent
+npm run setup:launch-agent
 launchctl load ~/Library/LaunchAgents/com.openclaw.watch-bridge.plist
 ```
 

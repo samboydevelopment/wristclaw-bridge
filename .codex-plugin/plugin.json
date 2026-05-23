@@ -1,0 +1,35 @@
+{
+  "name": "openclaw-watch",
+  "version": "0.1.0",
+  "description": "Private Apple Watch bridge for sending requests into an OpenClaw agent session.",
+  "author": {
+    "name": "OpenClaw Watch Contributors"
+  },
+  "repository": "https://github.com/marciaris21/openclaw-watch-skill",
+  "license": "MIT",
+  "keywords": [
+    "openclaw",
+    "apple-watch",
+    "bridge",
+    "tailscale"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "OpenClaw Watch",
+    "shortDescription": "Run a private Apple Watch bridge for OpenClaw.",
+    "longDescription": "Provides setup, launch, healthcheck, and private Tailscale exposure guidance for an Apple Watch companion bridge that sends authenticated requests to OpenClaw.",
+    "developerName": "OpenClaw Watch Contributors",
+    "category": "Productivity",
+    "capabilities": [
+      "Local Bridge",
+      "Private Network",
+      "Agent Control"
+    ],
+    "defaultPrompt": [
+      "Set up OpenClaw Watch",
+      "Start the watch bridge",
+      "Check the watch bridge health"
+    ],
+    "brandColor": "#2563EB"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "openclaw-watch",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Private Apple Watch bridge for sending requests into an OpenClaw agent session.",
+  "scripts": {
+    "setup": "node scripts/setup.mjs setup",
+    "setup:launch-agent": "node scripts/setup.mjs setup --launch-agent",
+    "show": "node scripts/setup.mjs show",
+    "start": "node scripts/start-bridge.mjs",
+    "health": "node scripts/healthcheck.mjs",
+    "validate:plugin": "python3 /Users/freddyvirtualassistant/.openclaw/agents/main/agent/codex-home/skills/.system/plugin-creator/scripts/validate_plugin.py .",
+    "scan:secrets": "node scripts/scan-secrets.mjs"
+  },
+  "keywords": [
+    "openclaw",
+    "apple-watch",
+    "bridge",
+    "tailscale"
+  ],
+  "license": "MIT"
+}
