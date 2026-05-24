@@ -20,8 +20,8 @@ const fastThinking = process.env.OPENCLAW_WATCH_FAST_THINKING ?? "minimal";
 const fastTimeoutSeconds = Number(process.env.OPENCLAW_WATCH_FAST_TIMEOUT_SECONDS ?? 120);
 const defaultTimeoutSeconds = Number(process.env.OPENCLAW_WATCH_TIMEOUT_SECONDS ?? 600);
 const longTimeoutSeconds = Number(process.env.OPENCLAW_WATCH_LONG_TIMEOUT_SECONDS ?? 1800);
-const userDisplayRole = process.env.OPENCLAW_WATCH_USER_DISPLAY_ROLE ?? "user";
-const assistantDisplayRole = process.env.OPENCLAW_WATCH_ASSISTANT_DISPLAY_ROLE ?? "assistant";
+const userDisplayRole = process.env.OPENCLAW_WATCH_USER_DISPLAY_ROLE ?? "freddy";
+const assistantDisplayRole = process.env.OPENCLAW_WATCH_ASSISTANT_DISPLAY_ROLE ?? "nova";
 const shortcutFriendlyErrors = process.env.OPENCLAW_WATCH_SHORTCUT_FRIENDLY_ERRORS !== "false";
 
 function normalizePath(req) {
