@@ -181,6 +181,26 @@ On Apple Watch:
 The setup is complete when the Watch can send a message, receive a response,
 load session messages, and create/select sessions.
 
+### 5. Optional: Premium Voice Replies (ElevenLabs)
+
+By default the Watch reads replies using the on-device Apple voice. If
+OpenClaw is configured with ElevenLabs (or another premium TTS provider)
+under `talk.provider` in `~/.openclaw/openclaw.json`, the Watch can use
+that voice instead.
+
+To enable it:
+
+1. Make sure `~/.openclaw/openclaw.json` has `talk.provider: "elevenlabs"`
+   and `talk.providers.elevenlabs.apiKey` configured.
+2. Run `npm run diagnose` — you should see
+   `[ok] Premium voice: elevenlabs ready` in the output.
+3. On Apple Watch open **Settings → ElevenLabs voice** and turn it on.
+
+If the premium provider is not configured the toggle has no effect —
+the Watch will keep using the Apple voice. There is no penalty for
+turning it on without ElevenLabs configured; replies just stay on the
+on-device voice.
+
 ## Optional LaunchAgent
 
 ```bash

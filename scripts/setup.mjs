@@ -135,7 +135,45 @@ async function runPreflight(values) {
   ];
 
   checks.push(await portCheck(host, port));
+  checks.push(await premiumVoiceCheck());
   return checks;
+}
+
+async function premiumVoiceCheck() {
+  // Lets the user know during setup whether ElevenLabs (or any other premium
+  // TTS provider) is configured in OpenClaw. If not, the Watch app will fall
+  // back to the on-device Apple voice — this is just informational.
+  const configPath = `${homedir()}/.openclaw/openclaw.json`;
+  const label = "Premium voice (ElevenLabs)";
+
+  if (!existsSync(configPath)) {
+    return warnCheck(label, "openclaw.json not found — Apple voice will be used");
+  }
+
+  try {
+    const raw = await readFile(configPath, "utf8");
+    const config = JSON.parse(raw);
+    const talk = config?.talk ?? {};
+    const provider = String(talk.provider ?? "").toLowerCase();
+    const providerConfig = talk.providers?.[provider];
+
+    if (!provider || provider === "system") {
+      return warnCheck(label, "Not configured — Apple voice will be used");
+    }
+    if (!providerConfig) {
+      return warnCheck(label, `talk.provider="${provider}" but no provider config — Apple voice will be used`);
+    }
+    const hasCredential = Boolean(
+      providerConfig.apiKey ?? providerConfig.token ?? providerConfig.key ?? providerConfig.credential
+    );
+    if (!hasCredential) {
+      return warnCheck(label, `${provider} missing apiKey — Apple voice will be used`);
+    }
+
+    return okCheck(label, `${provider} ready — toggle in Watch settings to use it`);
+  } catch (error) {
+    return warnCheck(label, error instanceof Error ? error.message : "Could not parse openclaw.json");
+  }
 }
 
 function okCheck(label, detail = "") {

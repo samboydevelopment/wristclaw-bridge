@@ -104,6 +104,81 @@ function commandStatus(commandName, commandArgs, label) {
   });
 }
 
+async function premiumVoiceStatus() {
+  // Detect whether OpenClaw has a premium TTS provider configured under `talk`.
+  // Used by the iPhone app and Watch settings to decide whether the
+  // "ElevenLabs voice" toggle will produce premium audio or fall back to
+  // the on-device Apple voice.
+  const configPath = `${homedir()}/.openclaw/openclaw.json`;
+  const baseId = "premium-voice";
+  const baseLabel = "Premium voice";
+
+  if (!existsSync(configPath)) {
+    return {
+      id: baseId,
+      label: baseLabel,
+      status: "warn",
+      message: "Not configured. The Watch will use the on-device Apple voice.",
+    };
+  }
+
+  try {
+    const raw = await readFile(configPath, "utf8");
+    const config = JSON.parse(raw);
+    const talk = config?.talk ?? {};
+    const provider = String(talk.provider ?? "").toLowerCase();
+    const providerConfig = talk.providers?.[provider];
+
+    if (!provider || provider === "system") {
+      return {
+        id: baseId,
+        label: baseLabel,
+        status: "warn",
+        message: "No premium provider set in talk.provider. Apple voice will be used.",
+      };
+    }
+
+    if (!providerConfig) {
+      return {
+        id: baseId,
+        label: baseLabel,
+        status: "warn",
+        message: `talk.provider is "${provider}" but providers.${provider} is missing.`,
+      };
+    }
+
+    const hasCredential = Boolean(
+      providerConfig.apiKey
+        ?? providerConfig.token
+        ?? providerConfig.key
+        ?? providerConfig.credential
+    );
+
+    if (!hasCredential) {
+      return {
+        id: baseId,
+        label: baseLabel,
+        status: "warn",
+        message: `${provider} configured without an apiKey. Apple voice will be used.`,
+      };
+    }
+
+    return {
+      id: baseId,
+      label: baseLabel,
+      status: "ok",
+      message: `${provider} ready — toggle "ElevenLabs voice" in Watch settings to use it.`,
+    };
+  } catch (error) {
+    return {
+      id: baseId,
+      label: baseLabel,
+      status: "warn",
+      message: error instanceof Error ? error.message : "Could not read openclaw.json",
+    };
+  }
+}
+
 async function buildDiagnostics() {
   const checks = [
     {
@@ -136,6 +211,7 @@ async function buildDiagnostics() {
     },
     await commandStatus("openclaw", ["--version"], "OpenClaw CLI"),
     await commandStatus("tailscale", ["status", "--json"], "Tailscale status"),
+    await premiumVoiceStatus(),
   ];
 
   try {
