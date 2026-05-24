@@ -782,7 +782,7 @@ const server = createServer(async (req, res) => {
     const body = await readBody(req);
     const command = JSON.parse(body);
     const agentName = String(command.agentName ?? "").trim() || defaultAgentName;
-    const prefix = `[Apple Watch: ${command.kind ?? "askAgent"}:${agentName}]`;
+    const prefix = `[Apple Watch — reply in 2-3 sentences max, plain text only, no markdown: ${command.kind ?? "askAgent"}:${agentName}]`;
     const text = String(command.text ?? "").trim();
     const reply = await runOpenClawAgent(`${prefix} ${text}`, command.sessionId, command.timeoutSeconds);
     sendJson(res, 200, { text: reply, status: "ok", actions: [] });
