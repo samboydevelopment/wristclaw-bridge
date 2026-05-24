@@ -371,6 +371,14 @@ function endpointUrl(askUrl, endpoint) {
 }
 
 function pairingHtml(pairing) {
+  const manualPayload = JSON.stringify({
+    agentName: pairing.agentName,
+    askUrl: pairing.askUrl,
+    healthUrl: pairing.healthUrl,
+    diagnosticsUrl: pairing.diagnosticsUrl,
+    token: pairing.token,
+  }, null, 2);
+
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -378,28 +386,293 @@ function pairingHtml(pairing) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>OpenClaw Watch Pairing</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 32px; color: #111; }
-    main { max-width: 720px; margin: 0 auto; }
-    img { width: min(320px, 100%); height: auto; border: 1px solid #ddd; padding: 12px; }
-    code, pre { background: #f5f5f5; border-radius: 6px; padding: 2px 4px; }
-    pre { overflow: auto; padding: 12px; }
-    a { color: #0645ad; }
+    :root {
+      color-scheme: dark;
+      --bg: #0b0d12;
+      --panel: #10131a;
+      --panel-strong: #171b22;
+      --border: #272d36;
+      --text: #f6f7fb;
+      --muted: rgba(246, 247, 251, 0.68);
+      --subtle: rgba(246, 247, 251, 0.10);
+      --accent: #ff5b57;
+      --accent-strong: #ef3436;
+      --accent-dark: #c81f29;
+      --cyan: #8ee4ff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 72% 16%, rgba(142, 228, 255, 0.13), transparent 28rem),
+        radial-gradient(circle at 16% 24%, rgba(255, 91, 87, 0.20), transparent 26rem),
+        linear-gradient(135deg, #1f232b 0%, var(--bg) 48%, #030405 100%);
+      color: var(--text);
+    }
+
+    main {
+      width: min(1040px, calc(100% - 32px));
+      min-height: 100vh;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
+      gap: 24px;
+      align-items: center;
+      padding: 32px 0;
+    }
+
+    .hero, .card {
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      background: rgba(16, 19, 26, 0.82);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+      backdrop-filter: blur(18px);
+    }
+
+    .hero {
+      min-height: 560px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-radius: 8px;
+      padding: 32px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -15% -28% 18%;
+      height: 280px;
+      background: linear-gradient(90deg, rgba(255, 91, 87, 0.34), rgba(142, 228, 255, 0.13));
+      filter: blur(70px);
+      pointer-events: none;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .mark {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: linear-gradient(145deg, var(--accent), var(--accent-dark));
+      box-shadow: 0 12px 32px rgba(239, 52, 54, 0.32);
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .eyebrow {
+      margin: 0;
+      color: var(--cyan);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    h1 {
+      max-width: 680px;
+      margin: 40px 0 14px;
+      font-size: clamp(42px, 7vw, 78px);
+      line-height: 0.95;
+      letter-spacing: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .lead {
+      max-width: 620px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.55;
+      position: relative;
+      z-index: 1;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 32px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .step {
+      min-height: 106px;
+      padding: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .step strong {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .step span {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .card {
+      border-radius: 8px;
+      padding: 22px;
+    }
+
+    .qr {
+      display: block;
+      width: min(320px, 100%);
+      height: auto;
+      margin: 0 auto 18px;
+      padding: 14px;
+      border-radius: 8px;
+      background: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .primary {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      min-height: 48px;
+      padding: 0 18px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      color: #ffffff;
+      font-weight: 800;
+      text-decoration: none;
+      box-shadow: 0 16px 40px rgba(239, 52, 54, 0.28);
+    }
+
+    .meta {
+      display: grid;
+      gap: 8px;
+      margin: 18px 0;
+      padding: 14px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .meta strong { color: var(--text); }
+
+    details {
+      margin-top: 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.09);
+      padding-top: 14px;
+    }
+
+    summary {
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    pre {
+      max-height: 220px;
+      overflow: auto;
+      margin: 12px 0 0;
+      padding: 12px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.32);
+      color: rgba(246, 247, 251, 0.82);
+      font-size: 12px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .security {
+      margin: 14px 0 0;
+      color: rgba(246, 247, 251, 0.54);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 820px) {
+      main {
+        grid-template-columns: 1fr;
+        align-items: start;
+        padding: 18px 0;
+      }
+
+      .hero {
+        min-height: auto;
+        padding: 24px;
+      }
+
+      h1 {
+        margin-top: 28px;
+        font-size: 44px;
+      }
+
+      .steps {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
   <main>
-    <h1>OpenClaw Watch Pairing</h1>
-    <p>Scan this QR with the iPhone app, or open the pairing link on the iPhone.</p>
-    <p><img src="./pairing-qr.svg" alt="OpenClaw Watch pairing QR"></p>
-    <p><a href="${html(pairing.deepLink)}">Open pairing link</a></p>
-    <h2>Manual fallback</h2>
-    <pre>${html(JSON.stringify({
-      agentName: pairing.agentName,
-      askUrl: pairing.askUrl,
-      healthUrl: pairing.healthUrl,
-      diagnosticsUrl: pairing.diagnosticsUrl,
-      token: pairing.token,
-    }, null, 2))}</pre>
+    <section class="hero" aria-labelledby="title">
+      <div class="brand">
+        <div class="mark" aria-hidden="true">OC</div>
+        <div>
+          <p class="eyebrow">OpenClaw Watch</p>
+          <p class="security">Private pairing over your Tailscale network</p>
+        </div>
+      </div>
+
+      <div>
+        <h1 id="title">Pair your Watch with ${html(pairing.agentName)}</h1>
+        <p class="lead">Scan the QR from the iPhone app, confirm diagnostics, then sync the saved configuration to Apple Watch.</p>
+
+        <div class="steps" aria-label="Pairing steps">
+          <div class="step"><strong>1. Scan</strong><span>Open the iPhone app and scan this QR from the pairing screen.</span></div>
+          <div class="step"><strong>2. Confirm</strong><span>The iPhone stores the token securely and runs diagnostics.</span></div>
+          <div class="step"><strong>3. Sync</strong><span>Send the verified config to Apple Watch and run a test message.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" aria-label="Pairing code">
+      <img class="qr" src="./pairing-qr.svg" alt="OpenClaw Watch pairing QR code">
+      <a class="primary" href="${html(pairing.deepLink)}">Open pairing link</a>
+
+      <div class="meta">
+        <div><strong>Agent</strong> ${html(pairing.agentName)}</div>
+        <div><strong>Bridge</strong> ${html(new URL(pairing.askUrl).host)}</div>
+        <div><strong>Created</strong> ${html(pairing.createdAt)}</div>
+      </div>
+
+      <details>
+        <summary>Manual fallback</summary>
+        <pre>${html(manualPayload)}</pre>
+      </details>
+
+      <p class="security">This page contains a bearer token. Keep it local, do not publish it, and regenerate pairing if it is shared by mistake.</p>
+    </section>
   </main>
 </body>
 </html>

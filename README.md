@@ -100,6 +100,87 @@ The Watch session picker uses `GET /watch/sessions`, `GET /watch/messages`, and
 `POST /watch/sessions` to create a named session from the Watch before the first
 message is sent.
 
+## User Onboarding
+
+Use this flow for a fresh user installing OpenClaw Watch.
+
+### 1. Prepare the Mac
+
+Prerequisites:
+
+- OpenClaw is installed and authenticated on the Mac.
+- Tailscale is installed, connected, and signed in.
+- Node.js is available.
+- The iPhone is signed in to the same Tailscale tailnet.
+
+Install and configure the bridge:
+
+```bash
+git clone https://github.com/marciaris21/openclaw-watch-skill.git
+cd openclaw-watch-skill
+npm install
+npm run setup
+```
+
+Start the bridge:
+
+```bash
+npm start
+```
+
+In another terminal, verify the local bridge:
+
+```bash
+npm run health
+npm run diagnose
+```
+
+### 2. Expose It Privately With Tailscale Serve
+
+Keep the bridge private to the user's tailnet:
+
+```bash
+tailscale serve --bg --set-path /watch http://127.0.0.1:8787
+```
+
+After Tailscale Serve is active, regenerate pairing artifacts:
+
+```bash
+npm run pair
+```
+
+This creates the production pairing page:
+
+```text
+~/.openclaw/openclaw-watch/pairing.html
+```
+
+Open that file on the Mac. It contains the branded QR page used by the iPhone
+app. Do not upload or share the page because it contains a bearer token.
+
+### 3. Pair the iPhone App
+
+On the iPhone:
+
+1. Install or open the OpenClaw Watch iPhone app.
+2. Make sure Tailscale is connected.
+3. Scan the QR from `pairing.html`, or tap the pairing link if the page is open on the iPhone.
+4. Confirm the app shows diagnostics as passing.
+5. Tap **Sync Watch** if the app does not sync automatically.
+
+### 4. Finish QC on Apple Watch
+
+On Apple Watch:
+
+1. Open OpenClaw Watch.
+2. Open Settings and confirm the session list loads.
+3. Select a session or create a new one.
+4. Return to chat and send a short test message.
+5. Confirm the response appears on the Watch.
+
+The setup is complete when the Watch can send a message, receive a response,
+load session messages, and create/select sessions.
+
 ## Optional LaunchAgent
 
 ```bash
