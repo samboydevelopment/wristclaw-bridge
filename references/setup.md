@@ -22,7 +22,15 @@ npm run health
 npm run setup
 ```
 
-This creates:
+This runs the guided setup wizard. It checks:
+
+- Node.js
+- OpenClaw CLI
+- Tailscale CLI
+- OpenClaw sessions file
+- local bridge port availability
+
+It creates:
 
 ```text
 ~/.openclaw/openclaw-watch/config.env
@@ -33,6 +41,8 @@ The config includes:
 - `OPENCLAW_WATCH_BRIDGE_HOST`
 - `OPENCLAW_WATCH_BRIDGE_PORT`
 - `OPENCLAW_WATCH_BRIDGE_TOKEN`
+- `OPENCLAW_WATCH_AGENT_SESSION_ID`
+- `OPENCLAW_WATCH_SESSIONS_PATH`
 - adaptive timeout defaults
 
 ## Run

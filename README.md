@@ -27,11 +27,17 @@ references/                     Setup and security notes
 npm run setup
 ```
 
-This creates private config at:
+The setup command is a guided CLI wizard. It checks Node.js, OpenClaw, Tailscale,
+the local bridge port, and the OpenClaw main session before writing config.
+
+It creates private config at:
 
 ```text
 ~/.openclaw/openclaw-watch/config.env
 ```
+
+The generated config includes the bearer token and the detected OpenClaw session
+target so the Watch shortcut can send requests without manual config edits.
 
 ## Run
 
