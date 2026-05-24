@@ -37,9 +37,9 @@ async function setup() {
   const checks = await runPreflight(values);
   printChecks(checks);
 
-  const token = force || !values.OPENCLAW_WATCH_BRIDGE_TOKEN
+  const token = force || !envOrExisting(values, "OPENCLAW_WATCH_BRIDGE_TOKEN", "")
     ? randomBytes(24).toString("base64url")
-    : values.OPENCLAW_WATCH_BRIDGE_TOKEN;
+    : envOrExisting(values, "OPENCLAW_WATCH_BRIDGE_TOKEN", "");
   const detectedSession = await detectMainSession(values);
   if (detectedSession?.warning) {
     console.log(`[warn] ${detectedSession.warning}`);
