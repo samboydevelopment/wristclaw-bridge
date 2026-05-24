@@ -39,6 +39,11 @@ It creates private config at:
 The generated config includes the bearer token and the detected OpenClaw session
 target so the Watch shortcut can send requests without manual config edits.
 
+By default, `/watch/ask` returns agent/runtime failures as HTTP 200 JSON with
+`status: "error"` so Apple Shortcuts can display the bridge error instead of
+surfacing a generic `NSURLErrorDomain -1011`. Set
+`OPENCLAW_WATCH_SHORTCUT_FRIENDLY_ERRORS=false` to preserve HTTP 500 responses.
+
 ## Run
 
 ```bash

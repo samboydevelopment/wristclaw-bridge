@@ -18,6 +18,7 @@ const defaultTimeoutSeconds = Number(process.env.OPENCLAW_WATCH_TIMEOUT_SECONDS 
 const longTimeoutSeconds = Number(process.env.OPENCLAW_WATCH_LONG_TIMEOUT_SECONDS ?? 1800);
 const userDisplayRole = process.env.OPENCLAW_WATCH_USER_DISPLAY_ROLE ?? "user";
 const assistantDisplayRole = process.env.OPENCLAW_WATCH_ASSISTANT_DISPLAY_ROLE ?? "assistant";
+const shortcutFriendlyErrors = process.env.OPENCLAW_WATCH_SHORTCUT_FRIENDLY_ERRORS !== "false";
 
 function normalizePath(req) {
   const url = new URL(req.url ?? "/", "http://localhost");
@@ -47,6 +48,15 @@ function readBody(req) {
 function sendJson(res, statusCode, payload) {
   res.writeHead(statusCode, { "content-type": "application/json" });
   res.end(JSON.stringify(payload));
+}
+
+function sendAskError(res, error) {
+  const message = error instanceof Error ? error.message : "Unknown bridge error";
+  sendJson(res, shortcutFriendlyErrors ? 200 : 500, {
+    text: `OpenClaw Watch error: ${message}`,
+    status: "error",
+    actions: [],
+  });
 }
 
 function assertAuth(req) {
@@ -465,7 +475,7 @@ function looksLikeJson(text) {
 const server = createServer(async (req, res) => {
   const path = normalizePath(req);
 
-  if (req.method === "GET" && path === "/health") {
+  if (req.method === "GET" && (path === "/health" || path === "/watch/health")) {
     sendJson(res, 200, { status: "ok" });
     return;
   }
@@ -548,11 +558,7 @@ const server = createServer(async (req, res) => {
     const reply = await runOpenClawAgent(`${prefix} ${text}`, command.sessionId, command.timeoutSeconds);
     sendJson(res, 200, { text: reply, status: "ok", actions: [] });
   } catch (error) {
-    sendJson(res, 500, {
-      text: error instanceof Error ? error.message : "Unknown bridge error",
-      status: "error",
-      actions: [],
-    });
+    sendAskError(res, error);
   }
 });
 

@@ -45,6 +45,15 @@ The config includes:
 - `OPENCLAW_WATCH_SESSIONS_PATH`
 - adaptive timeout defaults
 
+Apple Shortcuts treats HTTP 500 responses as `NSURLErrorDomain -1011`, which
+hides the bridge error text. The bridge therefore returns `/watch/ask` runtime
+failures as HTTP 200 JSON with `status: "error"` by default. To keep strict HTTP
+500 behavior, set:
+
+```text
+OPENCLAW_WATCH_SHORTCUT_FRIENDLY_ERRORS=false
+```
+
 ## Run
 
 ```bash
