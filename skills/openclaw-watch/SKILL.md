@@ -13,7 +13,7 @@ Use when setting up, running, debugging, or documenting the OpenClaw Watch bridg
 2. Start the bridge with `node ../../scripts/start-bridge.mjs` from this skill directory, or `node scripts/start-bridge.mjs` from the plugin root.
 3. Verify locally with `curl http://127.0.0.1:8787/health`.
 4. Expose it privately with Tailscale Serve using the setup output.
-5. Put the Tailscale HTTPS `/watch/ask` URL, token, and agent name in the iPhone app.
+5. Pair the iPhone app with `~/.openclaw/openclaw-watch/pairing-qr.svg` or `pairing.html`.
 
 Keep the bridge private to the user's tailnet. Do not use Tailscale Funnel unless explicitly requested.
 
@@ -21,6 +21,7 @@ Keep the bridge private to the user's tailnet. Do not use Tailscale Funnel unles
 
 - `scripts/setup.mjs`: generates config, token, optional LaunchAgent, and setup instructions.
 - `scripts/start-bridge.mjs`: loads private config and starts the local bridge.
+- `scripts/diagnose.mjs`: validates `/watch/diagnostics` with the configured token.
 - `scripts/watch-bridge.mjs`: local HTTP bridge used by the iPhone app.
 
 ## Security Model

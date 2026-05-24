@@ -8,8 +8,10 @@
     "setup": "node scripts/setup.mjs setup",
     "setup:launch-agent": "node scripts/setup.mjs setup --launch-agent",
     "show": "node scripts/setup.mjs show",
+    "pair": "node scripts/setup.mjs pair",
     "start": "node scripts/start-bridge.mjs",
     "health": "node scripts/healthcheck.mjs",
+    "diagnose": "node scripts/diagnose.mjs",
     "validate:plugin": "python3 /Users/freddyvirtualassistant/.openclaw/agents/main/agent/codex-home/skills/.system/plugin-creator/scripts/validate_plugin.py .",
     "scan:secrets": "node scripts/scan-secrets.mjs"
   },
@@ -19,5 +21,8 @@
     "bridge",
     "tailscale"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  }
 }

@@ -34,6 +34,10 @@ It creates:
 
 ```text
 ~/.openclaw/openclaw-watch/config.env
+~/.openclaw/openclaw-watch/pairing.json
+~/.openclaw/openclaw-watch/pairing.url
+~/.openclaw/openclaw-watch/pairing-qr.svg
+~/.openclaw/openclaw-watch/pairing.html
 ```
 
 The config includes:
@@ -41,9 +45,20 @@ The config includes:
 - `OPENCLAW_WATCH_BRIDGE_HOST`
 - `OPENCLAW_WATCH_BRIDGE_PORT`
 - `OPENCLAW_WATCH_BRIDGE_TOKEN`
+- `OPENCLAW_WATCH_AGENT_NAME`
 - `OPENCLAW_WATCH_AGENT_SESSION_ID`
 - `OPENCLAW_WATCH_SESSIONS_PATH`
+- `OPENCLAW_WATCH_PUBLIC_ASK_URL`
 - adaptive timeout defaults
+
+The pairing files are private. They contain the app deep link and bearer token
+needed by the iPhone app. The normal app flow is:
+
+1. Run setup on the Mac.
+2. Open or scan `pairing.html` / `pairing-qr.svg` from the iPhone.
+3. The app saves the payload to Keychain.
+4. The app calls `/watch/diagnostics`.
+5. The app transfers the saved config to Apple Watch.
 
 Apple Shortcuts treats HTTP 500 responses as `NSURLErrorDomain -1011`, which
 hides the bridge error text. The bridge therefore returns `/watch/ask` runtime
@@ -64,7 +79,12 @@ npm start
 
 ```bash
 npm run health
+npm run diagnose
 ```
+
+`npm run diagnose` calls `/watch/diagnostics` with the configured bearer token
+and prints user-facing checks for the bridge, token, OpenClaw CLI, Tailscale, and
+agent session.
 
 ## Tailscale Serve
 
@@ -76,6 +96,12 @@ Use the resulting HTTPS URL in the iPhone app, ending in:
 
 ```text
 /watch/ask
+```
+
+If Tailscale Serve was enabled after setup, regenerate pairing artifacts:
+
+```bash
+npm run pair
 ```
 
 ## Optional LaunchAgent

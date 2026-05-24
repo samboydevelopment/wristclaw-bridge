@@ -17,6 +17,7 @@ skills/openclaw-watch/SKILL.md  Agent instructions
 scripts/setup.mjs               Config/token/LaunchAgent setup
 scripts/start-bridge.mjs        Starts the local bridge
 scripts/healthcheck.mjs         Checks the local bridge
+scripts/diagnose.mjs            Prints user-facing bridge diagnostics
 scripts/watch-bridge.mjs        HTTP bridge implementation
 references/                     Setup and security notes
 ```
@@ -39,6 +40,20 @@ It creates private config at:
 The generated config includes the bearer token and the detected OpenClaw session
 target so the Watch shortcut can send requests without manual config edits.
 
+Setup also creates private iPhone pairing artifacts when it can detect the
+Tailscale HTTPS URL:
+
+```text
+~/.openclaw/openclaw-watch/pairing.json
+~/.openclaw/openclaw-watch/pairing.url
+~/.openclaw/openclaw-watch/pairing-qr.svg
+~/.openclaw/openclaw-watch/pairing.html
+```
+
+The QR/deep link uses the `openclaw-watch://pair` scheme and includes the ask
+URL, health URL, diagnostics URL, agent name, and bearer token. Keep these files
+private.
+
 By default, `/watch/ask` returns agent/runtime failures as HTTP 200 JSON with
 `status: "error"` so Apple Shortcuts can display the bridge error instead of
 surfacing a generic `NSURLErrorDomain -1011`. Set
@@ -54,6 +69,7 @@ Then verify:
 
 ```bash
 npm run health
+npm run diagnose
 ```
 
 ## Private Tailscale URL
@@ -69,6 +85,16 @@ https://<your-device>.<tailnet>.ts.net/watch/ask
 ```
 
 The token printed by setup goes in the app's token field.
+
+To regenerate only the pairing files after changing Tailscale Serve or the app:
+
+```bash
+npm run pair
+```
+
+The app can call `GET /watch/diagnostics` with the bearer token to show clear
+setup errors such as invalid token, missing OpenClaw CLI, Tailscale not running,
+or missing agent session.
 
 ## Optional LaunchAgent
 

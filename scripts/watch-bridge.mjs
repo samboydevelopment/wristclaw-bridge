@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { createServer } from "node:http";
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { homedir } from "node:os";
@@ -8,9 +9,12 @@ import { homedir } from "node:os";
 const port = Number(process.env.OPENCLAW_WATCH_BRIDGE_PORT ?? 8787);
 const host = process.env.OPENCLAW_WATCH_BRIDGE_HOST ?? "127.0.0.1";
 const token = process.env.OPENCLAW_WATCH_BRIDGE_TOKEN ?? "";
+const defaultAgentName = process.env.OPENCLAW_WATCH_AGENT_NAME ?? "agent";
 const agentSessionId = process.env.OPENCLAW_WATCH_AGENT_SESSION_ID ?? "";
 const agentChannel = process.env.OPENCLAW_WATCH_AGENT_CHANNEL ?? "";
 const agentTo = process.env.OPENCLAW_WATCH_AGENT_TO ?? "";
+const sessionsPath = process.env.OPENCLAW_WATCH_SESSIONS_PATH
+  ?? `${homedir()}/.openclaw/agents/main/sessions/sessions.json`;
 const agentThinking = process.env.OPENCLAW_WATCH_AGENT_THINKING ?? "";
 const fastThinking = process.env.OPENCLAW_WATCH_FAST_THINKING ?? "minimal";
 const fastTimeoutSeconds = Number(process.env.OPENCLAW_WATCH_FAST_TIMEOUT_SECONDS ?? 120);
@@ -63,6 +67,115 @@ function assertAuth(req) {
   if (!token) return true;
   const header = req.headers.authorization ?? "";
   return header === `Bearer ${token}`;
+}
+
+function commandStatus(commandName, commandArgs, label) {
+  return new Promise((resolveStatus) => {
+    const child = spawn(commandName, commandArgs, { stdio: ["ignore", "pipe", "pipe"] });
+    let output = "";
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk) => {
+      output += chunk;
+    });
+    child.stderr.on("data", (chunk) => {
+      output += chunk;
+    });
+    child.on("error", () => {
+      resolveStatus({
+        id: commandName,
+        label,
+        status: "error",
+        message: `${commandName} was not found on this Mac.`,
+      });
+    });
+    child.on("close", (code) => {
+      const line = String(output).trim().split(/\r?\n/)[0] ?? "";
+      resolveStatus({
+        id: commandName,
+        label,
+        status: code === 0 ? "ok" : "error",
+        message: code === 0 ? line : line || `${commandName} exited with code ${code}`,
+      });
+    });
+  });
+}
+
+async function buildDiagnostics() {
+  const checks = [
+    {
+      id: "bridge",
+      label: "Watch bridge",
+      status: "ok",
+      message: `Listening on http://${host}:${port}`,
+    },
+    {
+      id: "auth",
+      label: "Pairing token",
+      status: token ? "ok" : "warn",
+      message: token ? "Bearer token is configured." : "No bearer token is configured.",
+    },
+    {
+      id: "target",
+      label: "OpenClaw target",
+      status: agentSessionId || agentChannel || agentTo ? "ok" : "warn",
+      message: agentSessionId
+        ? "A session id is configured."
+        : agentChannel || agentTo
+          ? "A channel target is configured."
+          : "No session or channel target is configured.",
+    },
+    {
+      id: "sessions-file",
+      label: "OpenClaw sessions file",
+      status: existsSync(sessionsPath) ? "ok" : "warn",
+      message: existsSync(sessionsPath) ? sessionsPath : `Not found at ${sessionsPath}`,
+    },
+    await commandStatus("openclaw", ["--version"], "OpenClaw CLI"),
+    await commandStatus("tailscale", ["status", "--json"], "Tailscale status"),
+  ];
+
+  try {
+    const session = await findSessionRecord("");
+    checks.push({
+      id: "session",
+      label: "Agent session",
+      status: session?.sessionId ? "ok" : "warn",
+      message: session?.sessionId ? "Configured session was found." : "No usable agent session was found.",
+    });
+  } catch (error) {
+    checks.push({
+      id: "session",
+      label: "Agent session",
+      status: "warn",
+      message: error instanceof Error ? error.message : "Could not inspect the configured session.",
+    });
+  }
+
+  const status = checks.some((check) => check.status === "error")
+    ? "error"
+    : checks.some((check) => check.status === "warn")
+      ? "warn"
+      : "ok";
+
+  return {
+    status,
+    text: diagnosticText(status, checks),
+    checks,
+    configuration: {
+      agentName: defaultAgentName,
+      host,
+      port,
+      tokenConfigured: Boolean(token),
+      targetConfigured: Boolean(agentSessionId || agentChannel || agentTo),
+    },
+  };
+}
+
+function diagnosticText(status, checks) {
+  if (status === "ok") return "OpenClaw Watch is ready.";
+  const firstProblem = checks.find((check) => check.status === "error" || check.status === "warn");
+  return firstProblem?.message || "OpenClaw Watch needs attention.";
 }
 
 function thinkingForMessage(message) {
@@ -263,8 +376,6 @@ async function listOpenClawMessages(sessionId = "", limit = 12) {
 }
 
 async function findSessionRecord(sessionId = "") {
-  const sessionsPath = process.env.OPENCLAW_WATCH_SESSIONS_PATH
-    ?? `${homedir()}/.openclaw/agents/main/sessions/sessions.json`;
   const payload = JSON.parse(await readFile(sessionsPath, "utf8"));
   const targetSessionId = String(sessionId || agentSessionId || "").trim();
 
@@ -480,6 +591,27 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  if (req.method === "GET" && (path === "/watch/diagnostics" || path === "/diagnostics")) {
+    if (!assertAuth(req)) {
+      sendJson(res, 401, {
+        status: "error",
+        text: "Token invalid. Re-pair the iPhone app from the OpenClaw Watch setup wizard.",
+        checks: [
+          {
+            id: "auth",
+            label: "Pairing token",
+            status: "error",
+            message: "The iPhone app token does not match this Mac.",
+          },
+        ],
+      });
+      return;
+    }
+
+    sendJson(res, 200, await buildDiagnostics());
+    return;
+  }
+
   if (req.method === "GET" && (path === "/watch/sessions" || path === "/sessions")) {
     if (!assertAuth(req)) {
       sendJson(res, 401, { sessions: [] });
@@ -552,7 +684,7 @@ const server = createServer(async (req, res) => {
   try {
     const body = await readBody(req);
     const command = JSON.parse(body);
-    const agentName = String(command.agentName ?? "").trim() || "agent";
+    const agentName = String(command.agentName ?? "").trim() || defaultAgentName;
     const prefix = `[Apple Watch: ${command.kind ?? "askAgent"}:${agentName}]`;
     const text = String(command.text ?? "").trim();
     const reply = await runOpenClawAgent(`${prefix} ${text}`, command.sessionId, command.timeoutSeconds);
