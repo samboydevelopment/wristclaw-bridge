@@ -349,9 +349,15 @@ function runOpenClawAgent(message, sessionId = "", requestedTimeout = null) {
 
 function synthesizeTalkSpeech(text) {
   return new Promise((resolve, reject) => {
+    // Per-call overrides — short Watch replies favor low latency over max
+    // quality. Trade Eleven v3's deeper voice for Flash's ~75ms time-to-first-byte.
+    // These do NOT modify ~/.openclaw/openclaw.json; they only affect this call.
     const params = JSON.stringify({
       text,
+      modelId: "eleven_flash_v2_5",
       outputFormat: "mp3_22050_32",
+      latency_tier: 4,
+      optimize_streaming_latency: 4,
     });
     const child = spawn("openclaw", [
       "gateway",
