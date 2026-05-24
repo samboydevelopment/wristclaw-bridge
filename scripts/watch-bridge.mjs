@@ -2,9 +2,10 @@
 import { createServer } from "node:http";
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { homedir } from "node:os";
+import { dirname } from "node:path";
 
 const port = Number(process.env.OPENCLAW_WATCH_BRIDGE_PORT ?? 8787);
 const host = process.env.OPENCLAW_WATCH_BRIDGE_HOST ?? "127.0.0.1";
@@ -15,6 +16,8 @@ const agentChannel = process.env.OPENCLAW_WATCH_AGENT_CHANNEL ?? "";
 const agentTo = process.env.OPENCLAW_WATCH_AGENT_TO ?? "";
 const sessionsPath = process.env.OPENCLAW_WATCH_SESSIONS_PATH
   ?? `${homedir()}/.openclaw/agents/main/sessions/sessions.json`;
+const watchSessionsPath = process.env.OPENCLAW_WATCH_CREATED_SESSIONS_PATH
+  ?? `${homedir()}/.openclaw/openclaw-watch/watch-sessions.json`;
 const agentThinking = process.env.OPENCLAW_WATCH_AGENT_THINKING ?? "";
 const fastThinking = process.env.OPENCLAW_WATCH_FAST_THINKING ?? "minimal";
 const fastTimeoutSeconds = Number(process.env.OPENCLAW_WATCH_FAST_TIMEOUT_SECONDS ?? 120);
@@ -318,7 +321,26 @@ function synthesizeTalkSpeech(text) {
   });
 }
 
-function listOpenClawSessions() {
+async function listOpenClawSessions() {
+  const [openClawSessions, watchSessions] = await Promise.all([
+    loadOpenClawSessions(),
+    loadWatchCreatedSessions(),
+  ]);
+
+  const watchSessionById = new Map(watchSessions.map((session) => [session.id, session]));
+  const merged = openClawSessions.map((session) => watchSessionById.get(session.id) ?? session);
+  const seen = new Set(merged.map((session) => session.id));
+
+  for (const session of watchSessions) {
+    if (!seen.has(session.id)) {
+      merged.unshift(session);
+    }
+  }
+
+  return merged.slice(0, 20);
+}
+
+function loadOpenClawSessions() {
   return new Promise((resolve, reject) => {
     const child = spawn("openclaw", ["sessions", "--json", "--limit", "15"], {
       stdio: ["ignore", "pipe", "pipe"],
@@ -349,6 +371,60 @@ function listOpenClawSessions() {
       }
     });
   });
+}
+
+async function loadWatchCreatedSessions() {
+  try {
+    const payload = JSON.parse(await readFile(watchSessionsPath, "utf8"));
+    if (!Array.isArray(payload.sessions)) return [];
+    return payload.sessions.map(normalizeWatchCreatedSession).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+async function createWatchSession(title) {
+  const now = new Date();
+  const session = {
+    id: randomUUID(),
+    title: normalizeSessionTitle(title, now),
+    subtitle: "Created on Watch",
+    createdAt: now.toISOString(),
+  };
+  const sessions = [session, ...await loadWatchCreatedSessions()]
+    .filter((item, index, all) => all.findIndex((candidate) => candidate.id === item.id) === index)
+    .slice(0, 25);
+
+  await mkdir(dirname(watchSessionsPath), { recursive: true });
+  await writeFile(watchSessionsPath, JSON.stringify({ sessions }, null, 2), "utf8");
+  return session;
+}
+
+function normalizeWatchCreatedSession(session) {
+  const id = String(session?.id ?? "").trim();
+  const title = String(session?.title ?? "").trim();
+  if (!id || !title) return null;
+
+  return {
+    id,
+    title: title.slice(0, 80),
+    subtitle: String(session?.subtitle ?? "Created on Watch").trim() || "Created on Watch",
+  };
+}
+
+function normalizeSessionTitle(title, now = new Date()) {
+  const clean = String(title ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 80);
+
+  if (clean) return clean;
+  return `Watch Session ${now.toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  })}`;
 }
 
 async function listOpenClawMessages(sessionId = "", limit = 12) {
@@ -623,6 +699,27 @@ const server = createServer(async (req, res) => {
       sendJson(res, 200, { sessions });
     } catch {
       sendJson(res, 200, { sessions: [] });
+    }
+    return;
+  }
+
+  if (req.method === "POST" && (path === "/watch/sessions" || path === "/sessions")) {
+    if (!assertAuth(req)) {
+      sendJson(res, 401, { text: "Unauthorized", status: "error", actions: [] });
+      return;
+    }
+
+    try {
+      const body = await readBody(req);
+      const payload = body.trim() ? JSON.parse(body) : {};
+      const session = await createWatchSession(payload.title);
+      sendJson(res, 201, { session });
+    } catch (error) {
+      sendJson(res, 500, {
+        text: error instanceof Error ? error.message : "Could not create session",
+        status: "error",
+        actions: [],
+      });
     }
     return;
   }

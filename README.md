@@ -96,6 +96,10 @@ The app can call `GET /watch/diagnostics` with the bearer token to show clear
 setup errors such as invalid token, missing OpenClaw CLI, Tailscale not running,
 or missing agent session.
 
+The Watch session picker uses `GET /watch/sessions`, `GET /watch/messages`, and
+`POST /watch/sessions` to create a named session from the Watch before the first
+message is sent.
+
 ## Optional LaunchAgent
 
 ```bash
