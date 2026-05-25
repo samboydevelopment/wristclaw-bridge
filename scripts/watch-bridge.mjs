@@ -2,10 +2,10 @@
 import { createServer } from "node:http";
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
-import { homedir } from "node:os";
-import { dirname } from "node:path";
+import { homedir, tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 
 const port = Number(process.env.OPENCLAW_WATCH_BRIDGE_PORT ?? 8787);
 const host = process.env.OPENCLAW_WATCH_BRIDGE_HOST ?? "127.0.0.1";
@@ -304,6 +304,92 @@ function timeoutForMessage(message, requestedTimeout) {
   ];
 
   return longPatterns.some((pattern) => pattern.test(normalized)) ? longTimeoutSeconds : defaultTimeoutSeconds;
+}
+
+/**
+ * Handle a Watch request that includes an attached photo.
+ *
+ * The payload arrives as JSON `{ text, agentName, sessionId, imageBase64 }`.
+ * We write the image to a temp file, run `openclaw infer image describe`
+ * with the user's text as the prompt, and return the model's reply as a
+ * WatchResponse. The temp file is unlinked unconditionally.
+ *
+ * Limitation: `infer image describe` is a one-shot model call — it does
+ * NOT route through the agent session, so this exchange is NOT persisted
+ * in the OpenClaw session store. The Watch will display the reply but
+ * subsequent full-replace refreshes will not preserve photo-turn bubbles.
+ */
+async function handleImageDescribe(payload) {
+  const text = String(payload?.text ?? "").trim();
+  const imageBase64 = String(payload?.imageBase64 ?? "").trim();
+
+  if (!imageBase64) {
+    return { text: "Missing image data.", status: "error", actions: [] };
+  }
+
+  const promptText = text || "Describe this image in 2-3 sentences.";
+  const tmpPath = join(tmpdir(), `openclaw-watch-image-${randomUUID()}.jpg`);
+
+  try {
+    const imageBuffer = Buffer.from(imageBase64, "base64");
+    await writeFile(tmpPath, imageBuffer);
+
+    const description = await runInferImageDescribe(tmpPath, promptText);
+    return {
+      text: truncateForWatch(description),
+      status: "ok",
+      actions: [],
+    };
+  } catch (error) {
+    return {
+      text: error instanceof Error ? error.message : "Image describe failed.",
+      status: "error",
+      actions: [],
+    };
+  } finally {
+    await unlink(tmpPath).catch(() => undefined);
+  }
+}
+
+function runInferImageDescribe(filePath, prompt) {
+  return new Promise((resolve, reject) => {
+    const args = [
+      "infer", "image", "describe",
+      "--file", filePath,
+      "--prompt", prompt,
+      "--json",
+    ];
+    const child = spawn("openclaw", args, { stdio: ["ignore", "pipe", "pipe"] });
+
+    let stdout = "";
+    let stderr = "";
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk) => { stdout += chunk; });
+    child.stderr.on("data", (chunk) => { stderr += chunk; });
+    child.on("error", reject);
+    child.on("close", (code) => {
+      if (code !== 0) {
+        reject(new Error(stderr.trim() || `openclaw infer image describe exited with ${code}`));
+        return;
+      }
+      try {
+        // Try JSON first — the most common shape is { description: "..." }
+        // or { text: "..." }, but providers may differ. Fall back to raw
+        // stdout if it isn't valid JSON.
+        const parsed = JSON.parse(stdout);
+        const description = parsed?.description
+          ?? parsed?.text
+          ?? parsed?.output
+          ?? parsed?.message
+          ?? parsed?.content
+          ?? stdout.trim();
+        resolve(String(description).trim());
+      } catch {
+        resolve(stdout.trim());
+      }
+    });
+  });
 }
 
 function runOpenClawAgent(message, sessionId = "", requestedTimeout = null) {
@@ -1034,6 +1120,27 @@ const server = createServer(async (req, res) => {
     } catch (error) {
       sendJson(res, 503, {
         text: error instanceof Error ? error.message : "Unknown talk.speak error",
+        status: "error",
+        actions: [],
+      });
+    }
+    return;
+  }
+
+  if (req.method === "POST" && (path === "/watch/ask-with-image" || path === "/ask-with-image")) {
+    if (!assertAuth(req)) {
+      sendJson(res, 401, { text: "Unauthorized", status: "error", actions: [] });
+      return;
+    }
+
+    try {
+      const body = await readBody(req);
+      const payload = body.trim() ? JSON.parse(body) : {};
+      const result = await handleImageDescribe(payload);
+      sendJson(res, 200, result);
+    } catch (error) {
+      sendJson(res, 500, {
+        text: error instanceof Error ? error.message : "Could not process image",
         status: "error",
         actions: [],
       });
