@@ -36,13 +36,13 @@ function requestUrl(req) {
   return new URL(req.url ?? "/", "http://localhost");
 }
 
-function readBody(req) {
+function readBody(req, { maxBytes = 64_000 } = {}) {
   return new Promise((resolve, reject) => {
     let body = "";
     req.setEncoding("utf8");
     req.on("data", (chunk) => {
       body += chunk;
-      if (body.length > 64_000) {
+      if (body.length > maxBytes) {
         req.destroy();
         reject(new Error("Request body too large"));
       }
@@ -374,11 +374,14 @@ function runInferImageDescribe(filePath, prompt) {
         return;
       }
       try {
-        // Try JSON first — the most common shape is { description: "..." }
-        // or { text: "..." }, but providers may differ. Fall back to raw
-        // stdout if it isn't valid JSON.
+        // openclaw infer image describe --json returns:
+        //   { ok, capability, outputs: [{ path, text, provider, ... }] }
+        // Fall back to a few other common shapes in case the provider
+        // contract changes in a future OpenClaw release.
         const parsed = JSON.parse(stdout);
-        const description = parsed?.description
+        const description = parsed?.outputs?.[0]?.text
+          ?? parsed?.outputs?.[0]?.description
+          ?? parsed?.description
           ?? parsed?.text
           ?? parsed?.output
           ?? parsed?.message
@@ -1134,7 +1137,9 @@ const server = createServer(async (req, res) => {
     }
 
     try {
-      const body = await readBody(req);
+      // Image payloads are several MB after base64 — relax the default
+      // 64 KB body cap for this endpoint only.
+      const body = await readBody(req, { maxBytes: 4_000_000 });
       const payload = body.trim() ? JSON.parse(body) : {};
       const result = await handleImageDescribe(payload);
       sendJson(res, 200, result);
