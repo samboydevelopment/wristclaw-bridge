@@ -409,11 +409,18 @@ async function listOpenClawSessions() {
     loadWatchCreatedSessions(),
   ]);
 
-  const watchSessionById = new Map(watchSessions.map((session) => [session.id, session]));
+  // Auto-prune watch-only sessions that never produced an OpenClaw session
+  // and are past the grace period. Persist back if anything was removed.
+  const { kept: liveWatchSessions, removed } = pruneStaleWatchSessions(watchSessions, openClawSessions);
+  if (removed > 0) {
+    await saveWatchSessions(liveWatchSessions).catch(() => undefined);
+  }
+
+  const watchSessionById = new Map(liveWatchSessions.map((session) => [session.id, session]));
   const merged = openClawSessions.map((session) => watchSessionById.get(session.id) ?? session);
   const seen = new Set(merged.map((session) => session.id));
 
-  for (const session of watchSessions) {
+  for (const session of liveWatchSessions) {
     if (!seen.has(session.id)) {
       merged.unshift(session);
     }
@@ -487,11 +494,120 @@ function normalizeWatchCreatedSession(session) {
   const title = String(session?.title ?? "").trim();
   if (!id || !title) return null;
 
+  // Preserve createdAt so auto-purge can reason about session age.
+  const createdAt = session?.createdAt ? String(session.createdAt) : new Date().toISOString();
+
   return {
     id,
     title: title.slice(0, 80),
     subtitle: String(session?.subtitle ?? "Created on Watch").trim() || "Created on Watch",
+    createdAt,
   };
+}
+
+async function saveWatchSessions(sessions) {
+  await mkdir(dirname(watchSessionsPath), { recursive: true });
+  await writeFile(watchSessionsPath, JSON.stringify({ sessions }, null, 2), "utf8");
+}
+
+/**
+ * Drop watch-created sessions that never produced an OpenClaw session
+ * (i.e. the user named them but never sent a message) and are older
+ * than the grace period. Without this, abandoned sessions pile up in
+ * watch-sessions.json forever because there's nothing to evict them.
+ */
+const WATCH_SESSION_GRACE_MS = 24 * 60 * 60 * 1000;
+
+function pruneStaleWatchSessions(watchSessions, openClawSessions) {
+  const openIds = new Set(openClawSessions.map((s) => s.id));
+  const now = Date.now();
+  const kept = [];
+  let removed = 0;
+
+  for (const session of watchSessions) {
+    if (openIds.has(session.id)) {
+      kept.push(session);
+      continue;
+    }
+    const createdMs = Date.parse(session.createdAt ?? "");
+    const age = Number.isFinite(createdMs) ? now - createdMs : Infinity;
+    if (age > WATCH_SESSION_GRACE_MS) {
+      removed += 1;
+      continue;
+    }
+    kept.push(session);
+  }
+
+  return { kept, removed };
+}
+
+async function deleteSessionById(id) {
+  const targetId = String(id ?? "").trim();
+  if (!targetId) return { ok: false, reason: "missing id" };
+
+  // 1. If the session lives in watch-sessions.json, drop it.
+  const watchSessions = await loadWatchCreatedSessions();
+  const filtered = watchSessions.filter((s) => s.id !== targetId);
+  let removedFromWatchFile = false;
+  if (filtered.length !== watchSessions.length) {
+    await saveWatchSessions(filtered);
+    removedFromWatchFile = true;
+  }
+
+  // 2. If the session also exists in OpenClaw, ask the CLI to delete it.
+  let removedFromOpenClaw = false;
+  try {
+    const openClawSessions = await loadOpenClawSessionsRaw();
+    const match = openClawSessions.find((s) => s.sessionId === targetId);
+    if (match?.key) {
+      await runOpenClawSessionsDelete(match.key);
+      removedFromOpenClaw = true;
+    }
+  } catch {
+    // Non-fatal: the user can still re-run the delete later.
+  }
+
+  return {
+    ok: removedFromWatchFile || removedFromOpenClaw,
+    removedFromWatchFile,
+    removedFromOpenClaw,
+  };
+}
+
+function runOpenClawSessionsDelete(sessionKey) {
+  return new Promise((resolve, reject) => {
+    const child = spawn("openclaw", ["sessions", "delete", "--key", sessionKey, "--yes"], {
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    let stderr = "";
+    child.stderr.setEncoding("utf8");
+    child.stderr.on("data", (chunk) => { stderr += chunk; });
+    child.on("error", reject);
+    child.on("close", (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(stderr || `openclaw sessions delete exited with ${code}`));
+    });
+  });
+}
+
+function loadOpenClawSessionsRaw() {
+  return new Promise((resolve, reject) => {
+    const child = spawn("openclaw", ["sessions", "--json", "--limit", "50"], {
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk) => { stdout += chunk; });
+    child.stderr.on("data", (chunk) => { stderr += chunk; });
+    child.on("error", reject);
+    child.on("close", (code) => {
+      if (code !== 0) { reject(new Error(stderr || `openclaw sessions exited with ${code}`)); return; }
+      try { resolve(JSON.parse(stdout).sessions ?? []); }
+      catch (error) { reject(error); }
+    });
+  });
 }
 
 function normalizeSessionTitle(title, now = new Date()) {
@@ -833,6 +949,29 @@ const server = createServer(async (req, res) => {
       sendJson(res, 200, { sessions });
     } catch {
       sendJson(res, 200, { sessions: [] });
+    }
+    return;
+  }
+
+  if (req.method === "DELETE" && (path.startsWith("/watch/sessions/") || path.startsWith("/sessions/"))) {
+    if (!assertAuth(req)) {
+      sendJson(res, 401, { ok: false, text: "Unauthorized" });
+      return;
+    }
+
+    const id = decodeURIComponent(path.split("/").pop() ?? "");
+    try {
+      const result = await deleteSessionById(id);
+      if (!result.ok) {
+        sendJson(res, 404, { ok: false, text: "Session not found" });
+        return;
+      }
+      sendJson(res, 200, result);
+    } catch (error) {
+      sendJson(res, 500, {
+        ok: false,
+        text: error instanceof Error ? error.message : "Could not delete session",
+      });
     }
     return;
   }
