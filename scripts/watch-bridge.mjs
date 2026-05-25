@@ -614,12 +614,64 @@ function formatSessionOption(session) {
   const id = String(session.sessionId ?? "").trim();
   if (!id) return null;
 
-  const kind = session.kind ? String(session.kind) : "session";
-  const agentId = session.agentId ? String(session.agentId) : "agent";
-  const title = session.key === "agent:main:main" ? "Main" : `${agentId} ${kind}`;
+  const title = sessionTitleFromKey(session);
   const subtitle = session.updatedAt ? new Date(Number(session.updatedAt)).toLocaleString() : id;
 
   return { id, title, subtitle };
+}
+
+/**
+ * Derive a human-readable title from the OpenClaw session key.
+ *
+ * Key format: `agent:<agentId>:<channelOrKind>:<kind?>:<...target?>`
+ * Examples:
+ *   agent:main:main                                    → "Main"
+ *   agent:main:explicit:<uuid>                         → "Explicit"
+ *   agent:main:telegram:direct:8246904047              → "Telegram · 8246904047"
+ *   agent:main:whatsapp:direct:+16466238506            → "WhatsApp · +16466238506"
+ *
+ * Previously every non-main session collapsed to `"main direct"`, so three
+ * different channels all looked like duplicates in the Watch picker.
+ */
+function sessionTitleFromKey(session) {
+  const key = String(session.key ?? "");
+  if (key === "agent:main:main") return "Main";
+
+  const parts = key.split(":");
+  if (parts.length < 3) {
+    const kind = session.kind ? String(session.kind) : "session";
+    const agentId = session.agentId ? String(session.agentId) : "agent";
+    return `${agentId} ${kind}`;
+  }
+
+  const channelOrKind = parts[2];
+  if (channelOrKind === "explicit") return "Explicit";
+
+  const channelLabel = channelDisplayName(channelOrKind);
+  // Anything after the channel:kind pair is the target (handle id, phone, etc.)
+  const target = parts.length >= 5 ? parts.slice(4).join(":") : "";
+  if (!target) return channelLabel;
+
+  // Long opaque IDs stay readable; short targets (phone numbers, handles) untouched.
+  const displayTarget = target.length > 24 ? `${target.slice(0, 21)}…` : target;
+  return `${channelLabel} · ${displayTarget}`;
+}
+
+function channelDisplayName(channel) {
+  const titles = {
+    telegram: "Telegram",
+    whatsapp: "WhatsApp",
+    signal: "Signal",
+    sms: "SMS",
+    imessage: "iMessage",
+    email: "Email",
+    discord: "Discord",
+    slack: "Slack",
+    matrix: "Matrix",
+    main: "Main",
+  };
+  if (titles[channel]) return titles[channel];
+  return channel ? channel.charAt(0).toUpperCase() + channel.slice(1) : "Session";
 }
 
 function parseGatewayPayload(stdout) {
