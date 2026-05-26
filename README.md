@@ -201,6 +201,35 @@ the Watch will keep using the Apple voice. There is no penalty for
 turning it on without ElevenLabs configured; replies just stay on the
 on-device voice.
 
+## Agent → Watch Images (screenshots & file attachments)
+
+The agent can attach an outgoing image to its reply by including one of
+the following markers anywhere in its response text:
+
+```
+[screenshot]              Captures the current Mac screen
+[image: /path/to/file]    Attaches an existing image file
+```
+
+The bridge strips the marker before returning the text reply, compresses
+the image to a Watch-friendly JPEG (≤ ~220 KB) using `sips`, and forwards
+it to the Watch via WCSession. The image appears inside the agent's chat
+bubble and is persisted locally on the Watch so it survives session
+switches and app restarts.
+
+**Permissions:** `[screenshot]` uses macOS `screencapture`, which requires
+**Screen Recording** permission for the process running the bridge
+(System Settings → Privacy & Security → Screen Recording → enable for
+Node / Terminal / your launch agent). Without permission the marker is
+stripped from the response and the text-only reply is delivered.
+
+**Example agent prompt the user might send from the Watch:**
+- "Take a screenshot of my screen"
+- "Show me the latest chart in /Users/me/Reports/today.png"
+
+The agent can then return a reply such as:
+> Here's what's on your screen. `[screenshot]`
+
 ## Optional LaunchAgent
 
 ```bash

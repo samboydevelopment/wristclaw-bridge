@@ -2,7 +2,7 @@
 import { createServer } from "node:http";
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readFile, unlink, writeFile, stat } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -319,6 +319,140 @@ function timeoutForMessage(message, requestedTimeout) {
  * in the OpenClaw session store. The Watch will display the reply but
  * subsequent full-replace refreshes will not preserve photo-turn bubbles.
  */
+/**
+ * Maximum size in bytes for outgoing response images. The Watch app keeps
+ * them as JPEG thumbnails in the chat bubble; anything larger than this
+ * would bloat WCSession transfers and the on-device thumbnail store.
+ */
+const RESPONSE_IMAGE_MAX_BYTES = 220_000;
+
+/**
+ * Resize/recompress an image to fit within RESPONSE_IMAGE_MAX_BYTES.
+ * Uses `sips`, which ships with every macOS install — no extra dependency.
+ * Returns the path to the (possibly new) JPEG file.
+ */
+async function compressImageForWatch(srcPath) {
+  const outPath = join(tmpdir(), `openclaw-watch-response-${randomUUID()}.jpg`);
+  // First pass: 1024px wide, quality 70.
+  await new Promise((resolve, reject) => {
+    const child = spawn("sips", [
+      "-Z", "1024",
+      "-s", "format", "jpeg",
+      "-s", "formatOptions", "70",
+      srcPath,
+      "--out", outPath,
+    ], { stdio: "ignore" });
+    child.on("error", reject);
+    child.on("close", (code) => {
+      code === 0 ? resolve() : reject(new Error(`sips exited ${code}`));
+    });
+  });
+
+  // If still too big, take a second pass at a smaller width / lower quality.
+  let info = await stat(outPath);
+  if (info.size > RESPONSE_IMAGE_MAX_BYTES) {
+    await new Promise((resolve, reject) => {
+      const child = spawn("sips", [
+        "-Z", "720",
+        "-s", "format", "jpeg",
+        "-s", "formatOptions", "50",
+        outPath,
+        "--out", outPath,
+      ], { stdio: "ignore" });
+      child.on("error", reject);
+      child.on("close", (code) => {
+        code === 0 ? resolve() : reject(new Error(`sips (pass 2) exited ${code}`));
+      });
+    });
+    info = await stat(outPath);
+  }
+
+  return outPath;
+}
+
+/**
+ * Capture the current screen to a temp file. Requires Screen Recording
+ * permission for the Node process (System Settings → Privacy & Security →
+ * Screen Recording). Returns the path to the captured JPEG.
+ */
+async function captureScreenshot() {
+  const rawPath = join(tmpdir(), `openclaw-watch-screencap-${randomUUID()}.jpg`);
+  await new Promise((resolve, reject) => {
+    const child = spawn("screencapture", ["-x", "-t", "jpg", rawPath], { stdio: "ignore" });
+    child.on("error", reject);
+    child.on("close", (code) => {
+      code === 0 ? resolve() : reject(new Error(`screencapture exited ${code}`));
+    });
+  });
+  return rawPath;
+}
+
+/**
+ * Detect outgoing image markers in the agent's response text. Supported:
+ *   [screenshot]            → captures the current screen
+ *   [image: /abs/path]      → reads the file at that path
+ *
+ * Returns { text, image } where text has the marker removed and image is
+ * `{ base64, mimeType }` or null if no marker was found / processing failed.
+ *
+ * Markers are processed in order; the first valid one wins. Any temp files
+ * created by this function are unlinked before returning.
+ */
+async function extractOutgoingImage(rawText) {
+  const text = String(rawText ?? "");
+  let cleanedText = text;
+  let imagePath = null;
+  let tempPathsToDelete = [];
+
+  // [screenshot]
+  const screenshotMatch = text.match(/\[screenshot\]/i);
+  if (screenshotMatch) {
+    cleanedText = text.replace(screenshotMatch[0], "").trim();
+    try {
+      const captured = await captureScreenshot();
+      tempPathsToDelete.push(captured);
+      imagePath = captured;
+    } catch (err) {
+      console.warn("[OpenClaw Watch] screencapture failed:", err.message);
+    }
+  } else {
+    // [image: /path/to/file]
+    const imageMatch = text.match(/\[image:\s*([^\]]+)\]/i);
+    if (imageMatch) {
+      cleanedText = text.replace(imageMatch[0], "").trim();
+      const candidate = imageMatch[1].trim();
+      if (existsSync(candidate)) {
+        imagePath = candidate;
+      } else {
+        console.warn(`[OpenClaw Watch] [image:] path not found: ${candidate}`);
+      }
+    }
+  }
+
+  if (!imagePath) return { text: cleanedText, image: null };
+
+  // Compress, base64-encode, clean up.
+  try {
+    const compressedPath = await compressImageForWatch(imagePath);
+    tempPathsToDelete.push(compressedPath);
+    const buffer = await readFile(compressedPath);
+    return {
+      text: cleanedText || "(image)",
+      image: {
+        base64: buffer.toString("base64"),
+        mimeType: "image/jpeg",
+      },
+    };
+  } catch (err) {
+    console.warn("[OpenClaw Watch] image processing failed:", err.message);
+    return { text: cleanedText, image: null };
+  } finally {
+    for (const p of tempPathsToDelete) {
+      await unlink(p).catch(() => undefined);
+    }
+  }
+}
+
 async function handleImageDescribe(payload) {
   const text = String(payload?.text ?? "").trim();
   const imageBase64 = String(payload?.imageBase64 ?? "").trim();
@@ -335,10 +469,15 @@ async function handleImageDescribe(payload) {
     await writeFile(tmpPath, imageBuffer);
 
     const description = await runInferImageDescribe(tmpPath, promptText);
+    // Allow the agent to attach an outgoing image to the response via
+    // [screenshot] or [image: /path] markers — applied before truncation
+    // so the marker text is never user-visible.
+    const { text: textWithoutMarker, image } = await extractOutgoingImage(description);
     return {
-      text: truncateForWatch(description),
+      text: truncateForWatch(textWithoutMarker),
       status: "ok",
       actions: [],
+      image,
     };
   } catch (error) {
     return {
@@ -1170,7 +1309,10 @@ const server = createServer(async (req, res) => {
     const prefix = `[Apple Watch — reply in 2-3 sentences max, plain text only, no markdown: ${command.kind ?? "askAgent"}:${agentName}]`;
     const text = String(command.text ?? "").trim();
     const reply = await runOpenClawAgent(`${prefix} ${text}`, command.sessionId, command.timeoutSeconds);
-    sendJson(res, 200, { text: reply, status: "ok", actions: [] });
+    // Detect [screenshot] / [image: /path] in the agent's reply — strips
+    // the marker and returns the image as base64 alongside the text.
+    const { text: textWithoutMarker, image } = await extractOutgoingImage(reply);
+    sendJson(res, 200, { text: textWithoutMarker, status: "ok", actions: [], image });
   } catch (error) {
     sendAskError(res, error);
   }
