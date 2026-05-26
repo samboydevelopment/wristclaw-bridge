@@ -404,7 +404,8 @@ async function extractOutgoingImage(rawText) {
   let imagePath = null;
   let tempPathsToDelete = [];
 
-  // [screenshot]
+  // [screenshot] — also matches the marker wrapped in code spans
+  // (e.g. `[screenshot]`) or bold markdown (**[screenshot]**).
   const screenshotMatch = text.match(/\[screenshot\]/i);
   if (screenshotMatch) {
     cleanedText = text.replace(screenshotMatch[0], "").trim();
@@ -412,8 +413,11 @@ async function extractOutgoingImage(rawText) {
       const captured = await captureScreenshot();
       tempPathsToDelete.push(captured);
       imagePath = captured;
+      console.log("[OpenClaw Watch] [screenshot] marker matched — captured screen");
     } catch (err) {
       console.warn("[OpenClaw Watch] screencapture failed:", err.message);
+      // Surface failure in the reply text so the user notices.
+      cleanedText = (cleanedText + " (screenshot failed — grant Screen Recording permission to Node/Terminal in System Settings → Privacy & Security)").trim();
     }
   } else {
     // [image: /path/to/file]
@@ -423,8 +427,10 @@ async function extractOutgoingImage(rawText) {
       const candidate = imageMatch[1].trim();
       if (existsSync(candidate)) {
         imagePath = candidate;
+        console.log(`[OpenClaw Watch] [image:] marker matched — reading ${candidate}`);
       } else {
         console.warn(`[OpenClaw Watch] [image:] path not found: ${candidate}`);
+        cleanedText = (cleanedText + ` (image file not found: ${candidate})`).trim();
       }
     }
   }
@@ -436,6 +442,7 @@ async function extractOutgoingImage(rawText) {
     const compressedPath = await compressImageForWatch(imagePath);
     tempPathsToDelete.push(compressedPath);
     const buffer = await readFile(compressedPath);
+    console.log(`[OpenClaw Watch] outgoing image attached (${buffer.length} bytes JPEG)`);
     return {
       text: cleanedText || "(image)",
       image: {
@@ -445,7 +452,7 @@ async function extractOutgoingImage(rawText) {
     };
   } catch (err) {
     console.warn("[OpenClaw Watch] image processing failed:", err.message);
-    return { text: cleanedText, image: null };
+    return { text: cleanedText + " (image compression failed)", image: null };
   } finally {
     for (const p of tempPathsToDelete) {
       await unlink(p).catch(() => undefined);
@@ -1306,7 +1313,10 @@ const server = createServer(async (req, res) => {
     const body = await readBody(req);
     const command = JSON.parse(body);
     const agentName = String(command.agentName ?? "").trim() || defaultAgentName;
-    const prefix = `[Apple Watch — reply in 2-3 sentences max, plain text only, no markdown: ${command.kind ?? "askAgent"}:${agentName}]`;
+    // The marker hint teaches the agent how to attach images to its reply.
+    // Markers are stripped by the bridge before the text reaches the Watch.
+    const markerHint = "To attach a screenshot of the Mac screen include the literal token [screenshot] (lowercase, in brackets) anywhere in your reply. To attach an existing image file include [image: /absolute/path].";
+    const prefix = `[Apple Watch — reply in 2-3 sentences max, plain text only, no markdown. ${markerHint} Context: ${command.kind ?? "askAgent"}:${agentName}]`;
     const text = String(command.text ?? "").trim();
     const reply = await runOpenClawAgent(`${prefix} ${text}`, command.sessionId, command.timeoutSeconds);
     // Detect [screenshot] / [image: /path] in the agent's reply — strips
