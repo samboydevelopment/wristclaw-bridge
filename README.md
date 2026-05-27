@@ -40,6 +40,18 @@ It creates private config at:
 The generated config includes the bearer token and the detected OpenClaw session
 target so the Watch shortcut can send requests without manual config edits.
 
+The display names shown next to user and agent bubbles on the Watch come from
+two optional env vars in the same `config.env`:
+
+```text
+OPENCLAW_WATCH_USER_DISPLAY_ROLE="freddy"   # how YOU appear in the chat
+OPENCLAW_WATCH_ASSISTANT_DISPLAY_ROLE="nova" # how the agent appears
+```
+
+Set them to whatever fits your setup. The defaults `freddy` / `nova` are just
+placeholders from the original install — change them before pairing if you'd
+rather see your own name and your agent's name in the Watch UI.
+
 Setup also creates private iPhone pairing artifacts when it can detect the
 Tailscale HTTPS URL:
 
