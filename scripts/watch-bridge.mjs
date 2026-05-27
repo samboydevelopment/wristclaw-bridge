@@ -435,8 +435,22 @@ async function extractOutgoingImage(rawText) {
         imagePath = candidate;
         console.log(`[OpenClaw Watch] image marker matched — reading ${candidate}`);
       } else {
+        // Inspect why existsSync failed: log raw bytes and try fallbacks.
+        const codepoints = [...candidate].map(c => c.codePointAt(0).toString(16)).join(" ");
         console.warn(`[OpenClaw Watch] image path not found: ${candidate}`);
-        cleanedText = (cleanedText + ` (image file not found: ${candidate})`).trim();
+        console.warn(`[OpenClaw Watch] codepoints: ${codepoints}`);
+        // Try NFC normalization (HFS+/APFS can store filenames in NFD).
+        const nfc = candidate.normalize("NFC");
+        const nfd = candidate.normalize("NFD");
+        if (existsSync(nfc)) {
+          imagePath = nfc;
+          console.log(`[OpenClaw Watch] image marker matched after NFC normalize`);
+        } else if (existsSync(nfd)) {
+          imagePath = nfd;
+          console.log(`[OpenClaw Watch] image marker matched after NFD normalize`);
+        } else {
+          cleanedText = (cleanedText + ` (image file not found: ${candidate})`).trim();
+        }
       }
     }
   }
