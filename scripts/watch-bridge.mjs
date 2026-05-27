@@ -422,9 +422,10 @@ async function extractOutgoingImage(rawText) {
   } else {
     // [image: /path/to/file]
     const imageMatch = text.match(/\[image:\s*([^\]]+)\]/i);
-    // MEDIA:/path/to/file  — OpenClaw native media reference format
-    // Matches "MEDIA:/..." optionally followed by whitespace or end of string.
-    const mediaMatch = !imageMatch && text.match(/MEDIA:(\/[^\s]+)/);
+    // MEDIA:/path/to/file  — OpenClaw native media reference format.
+    // Paths may contain spaces (e.g. "Screenshot 2026-05-23 at 6.33.36 PM.png")
+    // so match to end-of-line / end-of-string rather than stopping at whitespace.
+    const mediaMatch = !imageMatch && text.match(/MEDIA:(\/[^\r\n]*)/);
 
     const chosenMatch = imageMatch || mediaMatch;
     if (chosenMatch) {
