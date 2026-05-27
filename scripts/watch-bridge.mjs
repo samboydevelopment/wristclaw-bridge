@@ -943,7 +943,18 @@ function formatVisibleMessage(entry) {
   if (entry?.message?.sourceChannel === "heartbeat" || entry?.message?.sourceChannel === "system") return null;
   if (entry?.message?.model === "delivery-mirror") return null;
 
-  const text = visibleTextFromContent(entry.message.content);
+  let text = visibleTextFromContent(entry.message.content);
+  if (!text) return null;
+
+  // Strip Watch bridge artifacts from persisted messages so old turns that
+  // were saved with the long markerHint no longer flood the chat.
+  if (role === "user") {
+    text = stripWatchPromptPrefix(text);
+  } else {
+    text = stripOutgoingImageMarkers(text);
+  }
+
+  text = text.trim();
   if (!text) return null;
   if (shouldHideFromWatch(text)) return null;
 
@@ -954,6 +965,36 @@ function formatVisibleMessage(entry) {
     status: "ok",
     createdAt: normalizeTimestamp(entry.timestamp),
   };
+}
+
+/// Remove the `[Watch — … ]` / `[Apple Watch — … ]` prefix the bridge
+/// prepends to every outgoing user message. Tolerates the old long form
+/// so historical messages get cleaned up too. The brackets can contain
+/// `]` characters from inner markers like `[image: …]`, so we anchor on
+/// the leading bracket and match through the LAST `]` before the user
+/// text starts.
+function stripWatchPromptPrefix(text) {
+  // New format uses unambiguous «…» guillemets so the close marker can't
+  // collide with inner [image: …] markers.
+  const guillemet = /^«[\s\S]*?»\s*/;
+  if (guillemet.test(text)) return text.replace(guillemet, "");
+
+  // Legacy "[Watch — ... ]" / "[Apple Watch — ... ]" prefix from older
+  // bridge versions. The inner brackets of `[image: …]` would break a
+  // greedy `[^\]]*?]` match, so we anchor on the final " kind:Agent]"
+  // segment we always emitted at the end of the prefix.
+  const legacy = /^\[(?:Apple\s+)?Watch[\s\S]*?(?:askAgent|fastTalk|talk|kind)\s*:\s*[A-Za-z0-9_-]+\s*\]\s*/i;
+  return text.replace(legacy, "");
+}
+
+/// Drop `[screenshot]` / `[image: …]` / `MEDIA:/path` markers from any
+/// persisted assistant text so they don't show up after a refresh on
+/// turns whose images already rendered live in the chat bubble.
+function stripOutgoingImageMarkers(text) {
+  return text
+    .replace(/\[screenshot\]/gi, "")
+    .replace(/\[image:\s*[^\]]+\]/gi, "")
+    .replace(/MEDIA:\/[^\r\n]*/g, "");
 }
 
 function normalizedUuid(value) {
@@ -1354,10 +1395,15 @@ const server = createServer(async (req, res) => {
     const body = await readBody(req);
     const command = JSON.parse(body);
     const agentName = String(command.agentName ?? "").trim() || defaultAgentName;
-    // The marker hint teaches the agent how to attach images to its reply.
-    // Markers are stripped by the bridge before the text reaches the Watch.
-    const markerHint = "CRITICAL BRIDGE INSTRUCTION: You DO have the ability to send images to the Apple Watch. The bridge intercepts your text and handles everything. If the user asks for a screenshot or to see the screen, you MUST include the exact literal text [screenshot] somewhere in your reply — the bridge will capture the screen and attach it automatically. If the user asks about an image file at a path, include [image: /absolute/path]. Do NOT say you cannot attach files or show images. Just write [screenshot] or [image: /path] in your reply and the bridge does the rest.";
-    const prefix = `[Apple Watch — reply in 2-3 sentences max, plain text only, no markdown. ${markerHint} Context: ${command.kind ?? "askAgent"}:${agentName}]`;
+    // Keep the prompt prefix short — every byte of it is persisted by the
+    // CLI as part of the user message in the session log and resurfaces on
+    // every Watch refresh. The bridge strips the marker text from the agent
+    // reply, and `formatVisibleMessage` strips the prefix from past user
+    // turns before they reach the Watch.
+    // Use «...» around the prefix so the regex stripper can find the end
+    // unambiguously even when the inner hint mentions [screenshot] etc.
+    const markerHint = "Image attach: write [screenshot] or [image: /abs/path] in your reply; the bridge handles the rest.";
+    const prefix = `«Watch — 2-3 sentences, plain text. ${markerHint} ${command.kind ?? "askAgent"}:${agentName}»`;
     const text = String(command.text ?? "").trim();
     const reply = await runOpenClawAgent(`${prefix} ${text}`, command.sessionId, command.timeoutSeconds);
     // Detect [screenshot] / [image: /path] in the agent's reply — strips
