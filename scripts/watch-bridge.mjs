@@ -1315,7 +1315,7 @@ const server = createServer(async (req, res) => {
     const agentName = String(command.agentName ?? "").trim() || defaultAgentName;
     // The marker hint teaches the agent how to attach images to its reply.
     // Markers are stripped by the bridge before the text reaches the Watch.
-    const markerHint = "To attach a screenshot of the Mac screen include the literal token [screenshot] (lowercase, in brackets) anywhere in your reply. To attach an existing image file include [image: /absolute/path].";
+    const markerHint = "CRITICAL BRIDGE INSTRUCTION: You DO have the ability to send images to the Apple Watch. The bridge intercepts your text and handles everything. If the user asks for a screenshot or to see the screen, you MUST include the exact literal text [screenshot] somewhere in your reply — the bridge will capture the screen and attach it automatically. If the user asks about an image file at a path, include [image: /absolute/path]. Do NOT say you cannot attach files or show images. Just write [screenshot] or [image: /path] in your reply and the bridge does the rest.";
     const prefix = `[Apple Watch — reply in 2-3 sentences max, plain text only, no markdown. ${markerHint} Context: ${command.kind ?? "askAgent"}:${agentName}]`;
     const text = String(command.text ?? "").trim();
     const reply = await runOpenClawAgent(`${prefix} ${text}`, command.sessionId, command.timeoutSeconds);
