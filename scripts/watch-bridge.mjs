@@ -2,7 +2,7 @@
 import { createServer } from "node:http";
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { mkdir, readFile, unlink, writeFile, stat } from "node:fs/promises";
+import { mkdir, readFile, readdir, unlink, writeFile, stat } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -435,21 +435,42 @@ async function extractOutgoingImage(rawText) {
         imagePath = candidate;
         console.log(`[OpenClaw Watch] image marker matched — reading ${candidate}`);
       } else {
-        // Inspect why existsSync failed: log raw bytes and try fallbacks.
-        const codepoints = [...candidate].map(c => c.codePointAt(0).toString(16)).join(" ");
-        console.warn(`[OpenClaw Watch] image path not found: ${candidate}`);
-        console.warn(`[OpenClaw Watch] codepoints: ${codepoints}`);
-        // Try NFC normalization (HFS+/APFS can store filenames in NFD).
-        const nfc = candidate.normalize("NFC");
-        const nfd = candidate.normalize("NFD");
-        if (existsSync(nfc)) {
-          imagePath = nfc;
-          console.log(`[OpenClaw Watch] image marker matched after NFC normalize`);
-        } else if (existsSync(nfd)) {
-          imagePath = nfd;
-          console.log(`[OpenClaw Watch] image marker matched after NFD normalize`);
+        // macOS screenshot filenames use U+202F (NARROW NO-BREAK SPACE) before
+        // "AM"/"PM", but the agent emits an ordinary 0x20 space. Try a few
+        // common variants and a directory scan before giving up.
+        const variants = [
+          candidate.normalize("NFC"),
+          candidate.normalize("NFD"),
+          candidate.replace(/ (?=AM|PM)/g, " "), // narrow no-break before AM/PM
+          candidate.replace(/ /g, " "),          // every space → narrow nbsp
+          candidate.replace(/ /g, " "),          // every space → nbsp
+        ];
+        const found = variants.find(v => existsSync(v));
+        if (found) {
+          imagePath = found;
+          console.log(`[OpenClaw Watch] image marker matched via variant`);
         } else {
-          cleanedText = (cleanedText + ` (image file not found: ${candidate})`).trim();
+          // Last resort: scan the parent directory for a name that matches
+          // after normalising all whitespace to plain 0x20.
+          try {
+            const dir = candidate.slice(0, candidate.lastIndexOf("/"));
+            const want = candidate.slice(candidate.lastIndexOf("/") + 1)
+              .replace(/\s+/g, " ").toLowerCase();
+            const entries = await readdir(dir);
+            const hit = entries.find(name =>
+              name.replace(/\s+/g, " ").toLowerCase() === want
+            );
+            if (hit) {
+              imagePath = `${dir}/${hit}`;
+              console.log(`[OpenClaw Watch] image marker matched via dir scan`);
+            }
+          } catch { /* ignore */ }
+          if (!imagePath) {
+            const codepoints = [...candidate].map(c => c.codePointAt(0).toString(16)).join(" ");
+            console.warn(`[OpenClaw Watch] image path not found: ${candidate}`);
+            console.warn(`[OpenClaw Watch] codepoints: ${codepoints}`);
+            cleanedText = (cleanedText + ` (image file not found: ${candidate})`).trim();
+          }
         }
       }
     }
