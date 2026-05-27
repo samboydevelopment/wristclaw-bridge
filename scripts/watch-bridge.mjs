@@ -422,14 +422,19 @@ async function extractOutgoingImage(rawText) {
   } else {
     // [image: /path/to/file]
     const imageMatch = text.match(/\[image:\s*([^\]]+)\]/i);
-    if (imageMatch) {
-      cleanedText = text.replace(imageMatch[0], "").trim();
-      const candidate = imageMatch[1].trim();
+    // MEDIA:/path/to/file  — OpenClaw native media reference format
+    // Matches "MEDIA:/..." optionally followed by whitespace or end of string.
+    const mediaMatch = !imageMatch && text.match(/MEDIA:(\/[^\s]+)/);
+
+    const chosenMatch = imageMatch || mediaMatch;
+    if (chosenMatch) {
+      cleanedText = text.replace(chosenMatch[0], "").trim();
+      const candidate = imageMatch ? imageMatch[1].trim() : mediaMatch[1].trim();
       if (existsSync(candidate)) {
         imagePath = candidate;
-        console.log(`[OpenClaw Watch] [image:] marker matched — reading ${candidate}`);
+        console.log(`[OpenClaw Watch] image marker matched — reading ${candidate}`);
       } else {
-        console.warn(`[OpenClaw Watch] [image:] path not found: ${candidate}`);
+        console.warn(`[OpenClaw Watch] image path not found: ${candidate}`);
         cleanedText = (cleanedText + ` (image file not found: ${candidate})`).trim();
       }
     }
