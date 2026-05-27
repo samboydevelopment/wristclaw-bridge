@@ -974,17 +974,30 @@ function formatVisibleMessage(entry) {
 /// the leading bracket and match through the LAST `]` before the user
 /// text starts.
 function stripWatchPromptPrefix(text) {
+  let out = text;
+
+  // The CLI prepends a "[Day YYYY-MM-DD HH:MM TZ] " timestamp block to
+  // every persisted user turn. Drop it first so the prefix detectors
+  // below match against the bare prompt.
+  out = out.replace(/^\[[A-Za-z]{3}\s+\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\s+[A-Z]{2,5}\]\s*/, "");
+
   // New format uses unambiguous «…» guillemets so the close marker can't
   // collide with inner [image: …] markers.
   const guillemet = /^«[\s\S]*?»\s*/;
-  if (guillemet.test(text)) return text.replace(guillemet, "");
+  if (guillemet.test(out)) return out.replace(guillemet, "");
 
   // Legacy "[Watch — ... ]" / "[Apple Watch — ... ]" prefix from older
-  // bridge versions. The inner brackets of `[image: …]` would break a
-  // greedy `[^\]]*?]` match, so we anchor on the final " kind:Agent]"
-  // segment we always emitted at the end of the prefix.
-  const legacy = /^\[(?:Apple\s+)?Watch[\s\S]*?(?:askAgent|fastTalk|talk|kind)\s*:\s*[A-Za-z0-9_-]+\s*\]\s*/i;
-  return text.replace(legacy, "");
+  // bridge versions. Inner brackets of `[image: …]` would break a greedy
+  // `[^\]]*?]` match, and the kind/agent suffix is dynamic, so we anchor
+  // on the literal "Context: " marker we always emit right before the
+  // closing bracket.
+  const legacyWithContext = /^\[(?:Apple\s+)?Watch[\s\S]*?Context:\s*[\w-]+:[\w-]+\s*\]\s*/i;
+  if (legacyWithContext.test(out)) return out.replace(legacyWithContext, "");
+
+  // Very-legacy form without the explicit "Context:" tag — fall back to
+  // closing at the first " kind:agent]" we find.
+  const legacyKindOnly = /^\[(?:Apple\s+)?Watch[\s\S]*?\b[\w-]+\s*:\s*[\w-]+\s*\]\s*/i;
+  return out.replace(legacyKindOnly, "");
 }
 
 /// Drop `[screenshot]` / `[image: …]` / `MEDIA:/path` markers from any
