@@ -323,50 +323,79 @@ function timeoutForMessage(message, requestedTimeout) {
  * Maximum size in bytes for outgoing response images. The Watch app keeps
  * them as JPEG thumbnails in the chat bubble; anything larger than this
  * would bloat WCSession transfers and the on-device thumbnail store.
+ *
+ * Note the hard cap on WCSession sendMessage is ~65 KB, and base64
+ * encoding inflates by ~33 %, so the upstream JSON response carries
+ * ~RESPONSE_IMAGE_MAX_BYTES * 1.33 bytes of payload per turn.
  */
-const RESPONSE_IMAGE_MAX_BYTES = 220_000;
+const RESPONSE_IMAGE_MAX_BYTES = 150_000;
+
+/**
+ * Run sips at a specific width/quality, blocking until exit. Throws with
+ * stderr context so the caller can surface a useful message rather than
+ * the bare "sips exited N" we used to log.
+ */
+function runSips(srcPath, outPath, width, quality) {
+  return new Promise((resolve, reject) => {
+    const child = spawn("sips", [
+      "-Z", String(width),
+      "-s", "format", "jpeg",
+      "-s", "formatOptions", String(quality),
+      srcPath,
+      "--out", outPath,
+    ], { stdio: ["ignore", "pipe", "pipe"] });
+    let stderr = "";
+    child.stderr.setEncoding("utf8");
+    child.stderr.on("data", (chunk) => { stderr += chunk; });
+    child.on("error", reject);
+    child.on("close", (code) => {
+      if (code === 0) return resolve();
+      reject(new Error(`sips exited ${code} (width=${width}, q=${quality}): ${stderr.trim() || "no stderr"}`));
+    });
+  });
+}
 
 /**
  * Resize/recompress an image to fit within RESPONSE_IMAGE_MAX_BYTES.
  * Uses `sips`, which ships with every macOS install — no extra dependency.
+ * Three progressively more aggressive passes; logs each step's size so the
+ * source of any 'image didn't arrive' problem can be diagnosed.
+ *
  * Returns the path to the (possibly new) JPEG file.
  */
 async function compressImageForWatch(srcPath) {
+  const t0 = Date.now();
+  const srcStat = await stat(srcPath).catch(() => null);
   const outPath = join(tmpdir(), `openclaw-watch-response-${randomUUID()}.jpg`);
-  // First pass: 1024px wide, quality 70.
-  await new Promise((resolve, reject) => {
-    const child = spawn("sips", [
-      "-Z", "1024",
-      "-s", "format", "jpeg",
-      "-s", "formatOptions", "70",
-      srcPath,
-      "--out", outPath,
-    ], { stdio: "ignore" });
-    child.on("error", reject);
-    child.on("close", (code) => {
-      code === 0 ? resolve() : reject(new Error(`sips exited ${code}`));
-    });
-  });
 
-  // If still too big, take a second pass at a smaller width / lower quality.
-  let info = await stat(outPath);
-  if (info.size > RESPONSE_IMAGE_MAX_BYTES) {
-    await new Promise((resolve, reject) => {
-      const child = spawn("sips", [
-        "-Z", "720",
-        "-s", "format", "jpeg",
-        "-s", "formatOptions", "50",
-        outPath,
-        "--out", outPath,
-      ], { stdio: "ignore" });
-      child.on("error", reject);
-      child.on("close", (code) => {
-        code === 0 ? resolve() : reject(new Error(`sips (pass 2) exited ${code}`));
-      });
-    });
-    info = await stat(outPath);
+  const passes = [
+    { width: 1024, quality: 70 },
+    { width: 720,  quality: 50 },
+    { width: 480,  quality: 35 },
+  ];
+
+  let finalSize = null;
+  let pass = 0;
+  for (const { width, quality } of passes) {
+    pass += 1;
+    // Pass 1 reads from srcPath; subsequent passes re-encode the previous out.
+    const inputPath = pass === 1 ? srcPath : outPath;
+    await runSips(inputPath, outPath, width, quality);
+    const info = await stat(outPath);
+    finalSize = info.size;
+    console.log(`[OpenClaw Watch] image compress pass ${pass} (${width}px, q${quality}) → ${finalSize} bytes`);
+    if (finalSize <= RESPONSE_IMAGE_MAX_BYTES) break;
   }
 
+  if (finalSize === null || finalSize > RESPONSE_IMAGE_MAX_BYTES) {
+    // All 3 passes done and still too big. Hand back what we have and let the
+    // caller decide; the iPhone path can fall back to transferFile for
+    // payloads up to a few MB even if sendMessage's 60 KB ceiling is busted.
+    console.warn(`[OpenClaw Watch] image still ${finalSize} bytes after 3 passes — sending anyway via transferFile`);
+  }
+
+  const dt = Date.now() - t0;
+  console.log(`[OpenClaw Watch] image compress total: ${srcStat?.size ?? "?"} → ${finalSize} bytes in ${dt} ms`);
   return outPath;
 }
 
