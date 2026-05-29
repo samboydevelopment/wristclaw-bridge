@@ -1,81 +1,100 @@
 # Privacy Policy — WristClaw
 
-_Last updated: 2026-05-27_
+_Last updated: 2026-05-29_
 
-WristClaw is designed to be private by default. This page describes
-what the app does (and does not) do with your data.
+WristClaw is designed to be private by default. This policy explains what WristClaw and WristClaw Bridge do with data when you use the iPhone app, Apple Watch app, widget, and local Mac bridge.
 
-## Short version
+## Short Version
 
-The app does not collect, store, or transmit any personal data to any
-server controlled by us or by any third party. Everything happens on
-your own devices and on your own private Tailscale network.
+WristClaw does not collect, sell, track, or share your personal data with Samboy Development.
 
-## What the app talks to
+The app is built around a user-controlled setup:
 
-WristClaw communicates with exactly two endpoints, both controlled
-by you:
+- Your Apple Watch talks to your paired iPhone.
+- Your iPhone talks to your own Mac over your own private network, typically Tailscale.
+- Your Mac runs WristClaw Bridge and your own OpenClaw-compatible agent setup.
 
-1. **Your paired iPhone**, over Apple's WatchConnectivity framework.
-2. **A bridge HTTP server** that you install and run on your own Mac as
-   part of the `wristclaw-bridge` plugin. This server listens only
-   on `127.0.0.1` by default and is reachable from the Watch through
-   Tailscale Serve inside your tailnet.
+Samboy Development does not operate a server that receives your messages, photos, tokens, voice requests, screenshots, or agent responses.
 
-There are no other network connections. No analytics SDK, no crash
-reporter that ships to a remote service, no telemetry.
+## Data Collection
 
-## What the app stores locally
+WristClaw does not collect data for Samboy Development.
 
-- The bearer token you generated during setup, kept in the iPhone
-  Keychain so subsequent launches don't require re-pairing.
-- A local copy of recent chat messages and any image thumbnails you
-  attached or received, stored in the Watch and iPhone app's sandbox.
-- Your display name and agent display name (chosen during setup) and
-  appearance preferences (accent color, voice settings).
+The app does not include analytics SDKs, advertising SDKs, third-party tracking SDKs, remote logging, or telemetry. We do not receive app usage events, chat content, photos, voice recordings, device identifiers, location, contacts, health data, or browsing history.
 
-You can remove everything by deleting the app from the Watch and the
-iPhone.
+## What WristClaw Communicates With
 
-## What the app does NOT do
+WristClaw communicates only with services and devices that you control or configure:
 
-- The app does **not** send chat content, photos, voice recordings, or
-  any other data to any cloud service operated by us.
-- The app does **not** include third-party SDKs that collect user data.
-- The app does **not** read your contacts, calendar, location, health
-  data, or browsing history.
+1. **Your paired iPhone and Apple Watch** using Apple's WatchConnectivity framework.
+2. **Your local WristClaw Bridge** running on your Mac.
+3. **Your OpenClaw-compatible agent** through the bridge running on your Mac.
+4. **Optional user-configured services** used by your OpenClaw setup, such as ElevenLabs for premium voice replies.
 
-## Permissions the app may request
+The recommended setup exposes the bridge through Tailscale Serve inside your own tailnet. Tailscale, OpenClaw, and ElevenLabs are separate services controlled by their own terms and privacy policies. WristClaw does not provide your credentials to Samboy Development.
 
-- **Photo Library (iPhone):** only to attach a recent photo to a Watch
-  message at your explicit request. The image stays inside the same
-  private path as the rest of the data flow (iPhone → Mac bridge).
-- **Speech Recognition (iPhone):** only to transcribe a voice memo you
-  record from the Watch. Transcription happens on the iPhone via Apple's
-  Speech framework.
+## What Is Stored Locally
 
-Both permissions are optional. Denying them does not break the rest of
-the app — the corresponding feature simply becomes unavailable.
+WristClaw may store the following data locally on your devices:
 
-## Third-party services
+- The bridge bearer token generated during setup, stored in the iPhone Keychain.
+- The bridge URL and diagnostics URLs, stored in local app settings.
+- Your display name, agent display name, accent color, voice settings, selected session, and other preferences.
+- Recent chat messages, response metadata, image thumbnails, and local message state inside the iPhone and Apple Watch app sandboxes.
+- Temporary audio files used to play voice replies on Apple Watch.
+- Temporary image files or thumbnails needed to display screenshots or photo attachments.
 
-WristClaw does not integrate with any third-party service directly.
-If the OpenClaw install on your Mac is configured to use ElevenLabs for
-premium voice replies, those audio responses are generated by ElevenLabs
-under the API key you configured there. The Watch app itself never
-communicates with ElevenLabs — it only plays audio that the bridge sent.
+This local data is used to make pairing, messaging, session switching, image display, and voice playback work across launches.
+
+## Photos
+
+WristClaw may request Photo Library access on iPhone when you choose to attach a photo to a Watch message or preview recent photos.
+
+When you use this feature, the app reads the selected or recent photo locally, prepares a Watch-sized preview or an attachment payload, and sends it through your configured private path: iPhone → your Mac bridge → your OpenClaw-compatible agent.
+
+WristClaw does not send photos to Samboy Development. If your own OpenClaw setup forwards images to an AI provider, that behavior is controlled by your OpenClaw configuration and that provider's terms.
+
+## Speech Recognition and Voice
+
+WristClaw may request Speech Recognition permission only when you dictate a message from Apple Watch or iPhone-supported flows.
+
+Speech transcription uses Apple's speech recognition capabilities. WristClaw does not send your voice recordings or transcripts to Samboy Development.
+
+By default, Watch voice replies use Apple's on-device speech synthesis. If you enable ElevenLabs voice and your OpenClaw setup is configured for it, audio responses may be generated through ElevenLabs by your Mac/OpenClaw setup. WristClaw itself does not store or transmit your ElevenLabs API key to Samboy Development.
+
+## Pairing Tokens and Security
+
+The WristClaw Bridge setup generates a bearer token used to authenticate requests from your iPhone/Watch to your Mac bridge.
+
+- The token is stored in the iPhone Keychain.
+- Pairing files generated by WristClaw Bridge may contain the token.
+- Pairing files should stay private and should not be uploaded, published, or shared.
+- If a pairing token is exposed, regenerate the pairing configuration from the bridge setup.
+
+The bridge binds to `127.0.0.1` by default and is intended to be exposed privately through Tailscale Serve. Public internet exposure is not part of the default setup.
+
+## Data Retention and Deletion
+
+WristClaw stores app data locally for as long as the app remains installed or until you reset/re-pair your configuration.
+
+You can remove locally stored WristClaw data by:
+
+- Deleting WristClaw from iPhone and Apple Watch.
+- Clearing or regenerating your local bridge configuration on the Mac.
+- Deleting generated bridge files under `~/.openclaw/openclaw-watch/` if you no longer need them.
+
+Because Samboy Development does not collect or host your WristClaw data, there is no Samboy Development server-side account or cloud database to delete.
 
 ## Children
 
-The app is rated 4+ and does not knowingly collect data from anyone.
+WristClaw is intended as a productivity utility and does not knowingly collect data from children or anyone else.
 
-## Changes to this policy
+## Changes to This Policy
 
-If this policy changes, the updated version will appear at the same URL
-with a new "Last updated" date.
+If this policy changes, the updated version will be posted at the same URL with a new “Last updated” date.
 
 ## Contact
 
-For questions about this policy, open an issue on the
-[wristclaw-bridge](https://github.com/samboydevelopment/wristclaw-bridge)
-repository.
+For privacy questions, support requests, or security concerns, open an issue in the public support repository:
+
+[https://github.com/samboydevelopment/wristclaw-bridge](https://github.com/samboydevelopment/wristclaw-bridge)
