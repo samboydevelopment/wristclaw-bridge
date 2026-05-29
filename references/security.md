@@ -1,6 +1,6 @@
 # Security Notes
 
-OpenClaw Watch runs a local HTTP bridge that can send messages into an OpenClaw agent session.
+WristClaw Bridge runs a local HTTP bridge that can send messages into an OpenClaw agent session.
 
 Default safeguards:
 

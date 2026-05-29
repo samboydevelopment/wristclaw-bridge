@@ -5,13 +5,12 @@ title: WristClaw
 
 # WristClaw
 
-Private Apple Watch companion for [OpenClaw](https://github.com/marciaris21/openclaw-watch-skill)
-agents running on your Mac. Nothing leaves your tailnet.
+Apple Watch and iPhone companion for OpenClaw-compatible agents running on your Mac. Each user connects WristClaw to their own private Tailscale network.
 
 ## Documents
 
 - [Privacy Policy](privacy.html)
-- [Source — bridge plugin](https://github.com/marciaris21/openclaw-watch-skill)
+- [Source - bridge plugin](https://github.com/samboydevelopment/openclaw-watch-skill)
 
 ## Disclaimer
 

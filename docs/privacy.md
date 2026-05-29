@@ -77,5 +77,5 @@ with a new "Last updated" date.
 ## Contact
 
 For questions about this policy, open an issue on the
-[openclaw-watch-skill](https://github.com/marciaris21/openclaw-watch-skill)
+[openclaw-watch-skill](https://github.com/samboydevelopment/openclaw-watch-skill)
 repository.

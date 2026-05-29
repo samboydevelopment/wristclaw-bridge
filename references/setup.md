@@ -1,9 +1,9 @@
-# OpenClaw Watch Setup
+# WristClaw Bridge Setup
 
 ## Fresh Clone
 
 ```bash
-git clone https://github.com/marciaris21/openclaw-watch-skill.git
+git clone https://github.com/samboydevelopment/openclaw-watch-skill.git
 cd openclaw-watch-skill
 npm install
 npm run validate:plugin
@@ -119,7 +119,7 @@ The generated pairing page is:
 ~/.openclaw/openclaw-watch/pairing.html
 ```
 
-Keep it private. The page is branded for the OpenClaw Watch app and contains the
+Keep it private. The page is branded for WristClaw and contains the
 bearer token required for pairing.
 
 ## Optional LaunchAgent

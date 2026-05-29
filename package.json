@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Private Apple Watch bridge for sending requests into an OpenClaw agent session.",
+  "description": "Local WristClaw bridge for sending requests into an OpenClaw-compatible agent session.",
   "scripts": {
     "setup": "node scripts/setup.mjs setup",
     "setup:launch-agent": "node scripts/setup.mjs setup --launch-agent",

@@ -60,7 +60,7 @@ function sendJson(res, statusCode, payload) {
 function sendAskError(res, error) {
   const message = error instanceof Error ? error.message : "Unknown bridge error";
   sendJson(res, shortcutFriendlyErrors ? 200 : 500, {
-    text: `OpenClaw Watch error: ${message}`,
+    text: `WristClaw Bridge error: ${message}`,
     status: "error",
     actions: [],
   });
@@ -252,9 +252,9 @@ async function buildDiagnostics() {
 }
 
 function diagnosticText(status, checks) {
-  if (status === "ok") return "OpenClaw Watch is ready.";
+  if (status === "ok") return "WristClaw Bridge is ready.";
   const firstProblem = checks.find((check) => check.status === "error" || check.status === "warn");
-  return firstProblem?.message || "OpenClaw Watch needs attention.";
+  return firstProblem?.message || "WristClaw Bridge needs attention.";
 }
 
 function thinkingForMessage(message) {
@@ -383,7 +383,7 @@ async function compressImageForWatch(srcPath) {
     await runSips(inputPath, outPath, width, quality);
     const info = await stat(outPath);
     finalSize = info.size;
-    console.log(`[OpenClaw Watch] image compress pass ${pass} (${width}px, q${quality}) → ${finalSize} bytes`);
+    console.log(`[WristClaw Bridge] image compress pass ${pass} (${width}px, q${quality}) → ${finalSize} bytes`);
     if (finalSize <= RESPONSE_IMAGE_MAX_BYTES) break;
   }
 
@@ -391,11 +391,11 @@ async function compressImageForWatch(srcPath) {
     // All 3 passes done and still too big. Hand back what we have and let the
     // caller decide; the iPhone path can fall back to transferFile for
     // payloads up to a few MB even if sendMessage's 60 KB ceiling is busted.
-    console.warn(`[OpenClaw Watch] image still ${finalSize} bytes after 3 passes — sending anyway via transferFile`);
+    console.warn(`[WristClaw Bridge] image still ${finalSize} bytes after 3 passes — sending anyway via transferFile`);
   }
 
   const dt = Date.now() - t0;
-  console.log(`[OpenClaw Watch] image compress total: ${srcStat?.size ?? "?"} → ${finalSize} bytes in ${dt} ms`);
+  console.log(`[WristClaw Bridge] image compress total: ${srcStat?.size ?? "?"} → ${finalSize} bytes in ${dt} ms`);
   return outPath;
 }
 
@@ -442,9 +442,9 @@ async function extractOutgoingImage(rawText) {
       const captured = await captureScreenshot();
       tempPathsToDelete.push(captured);
       imagePath = captured;
-      console.log("[OpenClaw Watch] [screenshot] marker matched — captured screen");
+      console.log("[WristClaw Bridge] [screenshot] marker matched — captured screen");
     } catch (err) {
-      console.warn("[OpenClaw Watch] screencapture failed:", err.message);
+      console.warn("[WristClaw Bridge] screencapture failed:", err.message);
       // Surface failure in the reply text so the user notices.
       cleanedText = (cleanedText + " (screenshot failed — grant Screen Recording permission to Node/Terminal in System Settings → Privacy & Security)").trim();
     }
@@ -462,7 +462,7 @@ async function extractOutgoingImage(rawText) {
       const candidate = imageMatch ? imageMatch[1].trim() : mediaMatch[1].trim();
       if (existsSync(candidate)) {
         imagePath = candidate;
-        console.log(`[OpenClaw Watch] image marker matched — reading ${candidate}`);
+        console.log(`[WristClaw Bridge] image marker matched — reading ${candidate}`);
       } else {
         // macOS screenshot filenames use U+202F (NARROW NO-BREAK SPACE) before
         // "AM"/"PM", but the agent emits an ordinary 0x20 space. Try a few
@@ -477,7 +477,7 @@ async function extractOutgoingImage(rawText) {
         const found = variants.find(v => existsSync(v));
         if (found) {
           imagePath = found;
-          console.log(`[OpenClaw Watch] image marker matched via variant`);
+          console.log(`[WristClaw Bridge] image marker matched via variant`);
         } else {
           // Last resort: scan the parent directory for a name that matches
           // after normalising all whitespace to plain 0x20.
@@ -491,13 +491,13 @@ async function extractOutgoingImage(rawText) {
             );
             if (hit) {
               imagePath = `${dir}/${hit}`;
-              console.log(`[OpenClaw Watch] image marker matched via dir scan`);
+              console.log(`[WristClaw Bridge] image marker matched via dir scan`);
             }
           } catch { /* ignore */ }
           if (!imagePath) {
             const codepoints = [...candidate].map(c => c.codePointAt(0).toString(16)).join(" ");
-            console.warn(`[OpenClaw Watch] image path not found: ${candidate}`);
-            console.warn(`[OpenClaw Watch] codepoints: ${codepoints}`);
+            console.warn(`[WristClaw Bridge] image path not found: ${candidate}`);
+            console.warn(`[WristClaw Bridge] codepoints: ${codepoints}`);
             cleanedText = (cleanedText + ` (image file not found: ${candidate})`).trim();
           }
         }
@@ -512,7 +512,7 @@ async function extractOutgoingImage(rawText) {
     const compressedPath = await compressImageForWatch(imagePath);
     tempPathsToDelete.push(compressedPath);
     const buffer = await readFile(compressedPath);
-    console.log(`[OpenClaw Watch] outgoing image attached (${buffer.length} bytes JPEG)`);
+    console.log(`[WristClaw Bridge] outgoing image attached (${buffer.length} bytes JPEG)`);
     return {
       text: cleanedText || "(image)",
       image: {
@@ -521,7 +521,7 @@ async function extractOutgoingImage(rawText) {
       },
     };
   } catch (err) {
-    console.warn("[OpenClaw Watch] image processing failed:", err.message);
+    console.warn("[WristClaw Bridge] image processing failed:", err.message);
     return { text: cleanedText + " (image compression failed)", image: null };
   } finally {
     for (const p of tempPathsToDelete) {
@@ -1280,7 +1280,7 @@ const server = createServer(async (req, res) => {
     if (!assertAuth(req)) {
       sendJson(res, 401, {
         status: "error",
-        text: "Token invalid. Re-pair the iPhone app from the OpenClaw Watch setup wizard.",
+        text: "Token invalid. Re-pair the WristClaw iPhone app from the WristClaw Bridge setup wizard.",
         checks: [
           {
             id: "auth",
@@ -1458,5 +1458,5 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(port, host, () => {
-  console.log(`OpenClaw Watch bridge listening on http://${host}:${port}/watch/ask`);
+  console.log(`WristClaw Bridge listening on http://${host}:${port}/watch/ask`);
 });

@@ -1,6 +1,11 @@
-# OpenClaw Watch
+# WristClaw Bridge
 
-Private/local OpenClaw plugin that runs the bridge used by the OpenClaw iPhone and Apple Watch companion app.
+Local OpenClaw plugin that runs the bridge used by WristClaw, the iPhone and Apple Watch companion app for OpenClaw-compatible agents.
+
+This repo is one half of the WristClaw product:
+
+- `samboydevelopment/WristClaw`: iPhone, Apple Watch, and widget app.
+- `samboydevelopment/openclaw-watch-skill`: local Mac bridge that connects the app to the user's own OpenClaw setup.
 
 The bridge stays private by default:
 
@@ -37,6 +42,8 @@ It creates private config at:
 ~/.openclaw/openclaw-watch/config.env
 ```
 
+The `openclaw-watch` directory name is retained for compatibility with existing local installs.
+
 The generated config includes the bearer token and the detected OpenClaw session
 target so the Watch shortcut can send requests without manual config edits.
 
@@ -62,9 +69,10 @@ Tailscale HTTPS URL:
 ~/.openclaw/openclaw-watch/pairing.html
 ```
 
-The QR/deep link uses the `openclaw-watch://pair` scheme and includes the ask
-URL, health URL, diagnostics URL, agent name, and bearer token. Keep these files
-private.
+The QR/deep link uses the `wristclaw://pair` scheme and includes the ask URL,
+health URL, diagnostics URL, agent name, and bearer token. Older
+`openclaw-watch://pair` links are still accepted by the app for compatibility.
+Keep these files private.
 
 By default, `/watch/ask` returns agent/runtime failures as HTTP 200 JSON with
 `status: "error"` so Apple Shortcuts can display the bridge error instead of
@@ -114,7 +122,7 @@ message is sent.
 
 ## User Onboarding
 
-Use this flow for a fresh user installing OpenClaw Watch.
+Use this flow for a fresh user installing WristClaw.
 
 ### 1. Prepare the Mac
 
@@ -128,7 +136,7 @@ Prerequisites:
 Install and configure the bridge:
 
 ```bash
-git clone https://github.com/marciaris21/openclaw-watch-skill.git
+git clone https://github.com/samboydevelopment/openclaw-watch-skill.git
 cd openclaw-watch-skill
 npm install
 npm run setup
@@ -174,7 +182,7 @@ app. Do not upload or share the page because it contains a bearer token.
 
 On the iPhone:
 
-1. Install or open the OpenClaw Watch iPhone app.
+1. Install or open the WristClaw iPhone app.
 2. Make sure Tailscale is connected.
 3. Scan the QR from `pairing.html`, or tap the pairing link if the page is open on the iPhone.
 4. Confirm the app shows diagnostics as passing.
@@ -184,7 +192,7 @@ On the iPhone:
 
 On Apple Watch:
 
-1. Open OpenClaw Watch.
+1. Open WristClaw.
 2. Open Settings and confirm the session list loads.
 3. Select a session or create a new one.
 4. Return to chat and send a short test message.
