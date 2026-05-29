@@ -1,0 +1,38 @@
+<svg width="1300" height="520" viewBox="0 0 1300 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1300" height="520" rx="28" fill="#0B0D12"/>
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000" flood-opacity="0.35"/></filter>
+    <marker id="arrow" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="10" markerHeight="10" orient="auto"><path d="M2 2L10 6L2 10" fill="#8EE4FF"/></marker>
+  </defs>
+  <text x="56" y="76" fill="#F8FAFC" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="36" font-weight="760">How WristClaw Bridge works</text>
+  <text x="56" y="112" fill="#A9B4C4" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="20">The Watch talks to iPhone; iPhone talks privately to the user's Mac over Tailscale; the bridge sends work to OpenClaw.</text>
+  <g filter="url(#shadow)">
+    <rect x="70" y="188" width="210" height="150" rx="24" fill="#121722" stroke="#2A3342"/>
+    <text x="100" y="240" fill="#F8FAFC" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="24" font-weight="700">Apple Watch</text>
+    <text x="100" y="276" fill="#A9B4C4" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="17">Quick action</text>
+    <text x="100" y="302" fill="#A9B4C4" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="17">Dictation</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="390" y="188" width="210" height="150" rx="24" fill="#121722" stroke="#2A3342"/>
+    <text x="420" y="240" fill="#F8FAFC" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="24" font-weight="700">iPhone</text>
+    <text x="420" y="276" fill="#A9B4C4" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="17">Pairing + Keychain</text>
+    <text x="420" y="302" fill="#A9B4C4" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="17">WatchConnectivity</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="710" y="188" width="230" height="150" rx="24" fill="#121722" stroke="#2A3342"/>
+    <text x="740" y="240" fill="#F8FAFC" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="24" font-weight="700">Tailscale</text>
+    <text x="740" y="276" fill="#A9B4C4" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="17">Private HTTPS</text>
+    <text x="740" y="302" fill="#A9B4C4" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="17">Bearer token</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="1050" y="188" width="210" height="150" rx="24" fill="#121722" stroke="#2A3342"/>
+    <text x="1080" y="240" fill="#F8FAFC" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="24" font-weight="700">Mac Bridge</text>
+    <text x="1080" y="276" fill="#A9B4C4" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="17">Local OpenClaw</text>
+    <text x="1080" y="302" fill="#A9B4C4" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="17">Agent session</text>
+  </g>
+  <path d="M286 263H376" stroke="#8EE4FF" stroke-width="4" marker-end="url(#arrow)"/>
+  <path d="M606 263H696" stroke="#8EE4FF" stroke-width="4" marker-end="url(#arrow)"/>
+  <path d="M946 263H1036" stroke="#8EE4FF" stroke-width="4" marker-end="url(#arrow)"/>
+  <path d="M1155 350C1124 426 205 426 175 350" stroke="#FF3B4F" stroke-width="4" stroke-dasharray="10 10" marker-end="url(#arrow)" opacity="0.82"/>
+  <text x="485" y="444" fill="#A9B4C4" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="18">Replies flow back through the same private path</text>
+</svg>
