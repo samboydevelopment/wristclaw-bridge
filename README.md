@@ -75,6 +75,12 @@ npm run health
 npm run diagnose
 ```
 
+If the connection breaks after an OpenClaw, Tailscale, or bridge update, run:
+
+```bash
+npm run repair
+```
+
 ### 4. Expose privately with Tailscale Serve
 
 ```bash
@@ -139,6 +145,25 @@ Use this flow for a fresh user installing WristClaw.
 11. Send a test message from Apple Watch.
 
 QC is complete when the Watch can send a message, receive a response, load messages for the selected session, and create/select sessions.
+
+## Repair After Updates
+
+OpenClaw or Tailscale updates can occasionally disturb the local bridge path or the Tailscale Serve route. Use the repair command before re-pairing devices:
+
+```bash
+npm run repair
+```
+
+The repair command:
+
+- Loads the existing `~/.openclaw/openclaw-watch/config.env`.
+- Verifies local `/health` and authenticated `/watch/diagnostics`.
+- Checks that `openclaw` and `tailscale` are available.
+- Reapplies `tailscale serve --bg --set-path /watch http://127.0.0.1:8787` using your configured host/port.
+- Regenerates pairing files when a public Tailscale ask URL is configured.
+- Prints whether re-pairing is needed.
+
+It does not rotate your token or replace your configured OpenClaw session. If diagnostics reports a missing session after an OpenClaw update, run `npm run setup` to refresh the session configuration.
 
 ## Configuration
 

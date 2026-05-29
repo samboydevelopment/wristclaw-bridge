@@ -36,6 +36,7 @@ node --check scripts/watch-bridge.mjs
 node --check scripts/start-bridge.mjs
 node --check scripts/diagnose.mjs
 node --check scripts/healthcheck.mjs
+node --check scripts/repair.mjs
 npm run scan:secrets
 ```
 
@@ -46,5 +47,6 @@ npm run setup
 npm start
 npm run health
 npm run diagnose
+npm run repair
 npm run pair
 ```

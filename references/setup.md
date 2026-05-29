@@ -122,6 +122,22 @@ The generated pairing page is:
 Keep it private. The page is branded for WristClaw and contains the
 bearer token required for pairing.
 
+## Repair After Updates
+
+If OpenClaw, Tailscale, or WristClaw Bridge was updated and the iPhone/Watch can no longer reach the bridge, run:
+
+```bash
+npm run repair
+```
+
+This keeps the existing token/session, checks local health and diagnostics, reapplies the private Tailscale Serve `/watch` route, and regenerates pairing files when `OPENCLAW_WATCH_PUBLIC_ASK_URL` is configured.
+
+If `npm run repair` reports that the configured OpenClaw session is missing, run:
+
+```bash
+npm run setup
+```
+
 ## Optional LaunchAgent
 
 ```bash
