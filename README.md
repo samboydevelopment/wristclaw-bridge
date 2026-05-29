@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/wristclaw-bridge-logo.svg" width="112" alt="WristClaw Bridge logo">
+  <img src="assets/wristclaw-app-logo.png" width="112" alt="WristClaw Bridge logo">
 </p>
 
 # WristClaw Bridge
