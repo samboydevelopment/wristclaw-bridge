@@ -5,8 +5,8 @@ Thanks for helping improve WristClaw Bridge.
 ## Local Setup
 
 ```bash
-git clone https://github.com/samboydevelopment/openclaw-watch-skill.git
-cd openclaw-watch-skill
+git clone https://github.com/samboydevelopment/wristclaw-bridge.git
+cd wristclaw-bridge
 npm install
 npm run scan:secrets
 ```

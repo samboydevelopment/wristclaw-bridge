@@ -11,7 +11,7 @@ WristClaw Bridge keeps the user's setup private by default. It binds to `127.0.0
 This repo is one half of the WristClaw product:
 
 - `samboydevelopment/WristClaw`: iPhone, Apple Watch, and widget app.
-- `samboydevelopment/openclaw-watch-skill`: local Mac bridge that connects WristClaw to the user's own OpenClaw setup.
+- `samboydevelopment/wristclaw-bridge`: local Mac bridge that connects WristClaw to the user's own OpenClaw setup.
 
 ## What It Does
 
@@ -41,8 +41,8 @@ WristClaw Bridge lets the Watch app send short commands to an OpenClaw-compatibl
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/samboydevelopment/openclaw-watch-skill.git
-cd openclaw-watch-skill
+git clone https://github.com/samboydevelopment/wristclaw-bridge.git
+cd wristclaw-bridge
 npm install
 ```
 

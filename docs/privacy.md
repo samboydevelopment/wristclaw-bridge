@@ -18,7 +18,7 @@ by you:
 
 1. **Your paired iPhone**, over Apple's WatchConnectivity framework.
 2. **A bridge HTTP server** that you install and run on your own Mac as
-   part of the `openclaw-watch-skill` plugin. This server listens only
+   part of the `wristclaw-bridge` plugin. This server listens only
    on `127.0.0.1` by default and is reachable from the Watch through
    Tailscale Serve inside your tailnet.
 
@@ -77,5 +77,5 @@ with a new "Last updated" date.
 ## Contact
 
 For questions about this policy, open an issue on the
-[openclaw-watch-skill](https://github.com/samboydevelopment/openclaw-watch-skill)
+[wristclaw-bridge](https://github.com/samboydevelopment/wristclaw-bridge)
 repository.

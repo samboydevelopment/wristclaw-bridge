@@ -10,7 +10,7 @@ Apple Watch and iPhone companion for OpenClaw-compatible agents running on your 
 ## Documents
 
 - [Privacy Policy](privacy.html)
-- [Source - bridge plugin](https://github.com/samboydevelopment/openclaw-watch-skill)
+- [Source - bridge plugin](https://github.com/samboydevelopment/wristclaw-bridge)
 
 ## Disclaimer
 
