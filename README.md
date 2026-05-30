@@ -13,6 +13,14 @@ This repo is one half of the WristClaw product:
 - `samboydevelopment/WristClaw`: iPhone, Apple Watch, and widget app.
 - `samboydevelopment/wristclaw-bridge`: local Mac bridge that connects WristClaw to the user's own OpenClaw setup.
 
+<p align="center">
+  <img src="assets/wristclaw-watch-control.png" alt="Person controlling a Mac from WristClaw on Apple Watch">
+</p>
+
+<p align="center">
+  <strong>Control and work with your computer directly from your wrist.</strong>
+</p>
+
 ## What It Does
 
 WristClaw Bridge lets the Watch app send short commands to an OpenClaw-compatible agent running on the user's Mac.
