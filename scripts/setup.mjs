@@ -871,8 +871,8 @@ function displayPath(path) {
 
 function help() {
   console.log(`Usage:
-  node Skills/openclaw-watch/scripts/setup.mjs setup [--force] [--launch-agent]
-  node Skills/openclaw-watch/scripts/setup.mjs show
-  node Skills/openclaw-watch/scripts/setup.mjs pair
+  npm run setup -- [--force] [--launch-agent]
+  npm run show
+  npm run pair
 `);
 }
