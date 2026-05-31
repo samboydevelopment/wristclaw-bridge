@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { randomBytes } from "node:crypto";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import { homedir } from "node:os";
@@ -52,13 +52,13 @@ async function setup() {
     OPENCLAW_WATCH_BRIDGE_HOST: envOrExisting(values, "OPENCLAW_WATCH_BRIDGE_HOST", "127.0.0.1"),
     OPENCLAW_WATCH_BRIDGE_PORT: envOrExisting(values, "OPENCLAW_WATCH_BRIDGE_PORT", "8787"),
     OPENCLAW_WATCH_BRIDGE_TOKEN: token,
-    OPENCLAW_WATCH_AGENT_NAME: envOrExisting(values, "OPENCLAW_WATCH_AGENT_NAME", "Nova"),
+    OPENCLAW_WATCH_AGENT_NAME: envOrExisting(values, "OPENCLAW_WATCH_AGENT_NAME", "Assistant"),
     OPENCLAW_WATCH_FAST_THINKING: envOrExisting(values, "OPENCLAW_WATCH_FAST_THINKING", "minimal"),
     OPENCLAW_WATCH_FAST_TIMEOUT_SECONDS: envOrExisting(values, "OPENCLAW_WATCH_FAST_TIMEOUT_SECONDS", "120"),
     OPENCLAW_WATCH_TIMEOUT_SECONDS: envOrExisting(values, "OPENCLAW_WATCH_TIMEOUT_SECONDS", "600"),
     OPENCLAW_WATCH_LONG_TIMEOUT_SECONDS: envOrExisting(values, "OPENCLAW_WATCH_LONG_TIMEOUT_SECONDS", "1800"),
-    OPENCLAW_WATCH_USER_DISPLAY_ROLE: envOrExisting(values, "OPENCLAW_WATCH_USER_DISPLAY_ROLE", "freddy"),
-    OPENCLAW_WATCH_ASSISTANT_DISPLAY_ROLE: envOrExisting(values, "OPENCLAW_WATCH_ASSISTANT_DISPLAY_ROLE", "nova"),
+    OPENCLAW_WATCH_USER_DISPLAY_ROLE: envOrExisting(values, "OPENCLAW_WATCH_USER_DISPLAY_ROLE", "you"),
+    OPENCLAW_WATCH_ASSISTANT_DISPLAY_ROLE: envOrExisting(values, "OPENCLAW_WATCH_ASSISTANT_DISPLAY_ROLE", "assistant"),
   };
 
   if (values.OPENCLAW_WATCH_AGENT_SESSION_ID || detectedSession?.sessionId) {
@@ -358,7 +358,7 @@ function buildPairing(values) {
   const payload = {
     type: "openclaw-watch-pairing",
     version: 1,
-    agentName: values.OPENCLAW_WATCH_AGENT_NAME || "Nova",
+    agentName: values.OPENCLAW_WATCH_AGENT_NAME || "Assistant",
     askUrl,
     healthUrl,
     diagnosticsUrl,
@@ -408,6 +408,17 @@ function endpointUrl(askUrl, endpoint) {
   return url.toString();
 }
 
+function appAvatarDataUri() {
+  const logoPath = resolve(skillDir, "assets", "wristclaw-app-logo.png");
+  if (!existsSync(logoPath)) return "";
+
+  try {
+    return `data:image/png;base64,${readFileSync(logoPath).toString("base64")}`;
+  } catch {
+    return "";
+  }
+}
+
 function pairingHtml(pairing) {
   const manualPayload = JSON.stringify({
     agentName: pairing.agentName,
@@ -416,6 +427,10 @@ function pairingHtml(pairing) {
     diagnosticsUrl: pairing.diagnosticsUrl,
     token: pairing.token,
   }, null, 2);
+  const avatarSrc = appAvatarDataUri();
+  const brandMark = avatarSrc
+    ? `<img class="mark mark-image" src="${html(avatarSrc)}" alt="" aria-hidden="true">`
+    : `<div class="mark" aria-hidden="true">WC</div>`;
 
   return `<!doctype html>
 <html lang="en">
@@ -510,6 +525,12 @@ function pairingHtml(pairing) {
       font-size: 24px;
       font-weight: 800;
       line-height: 1;
+    }
+
+    .mark-image {
+      object-fit: contain;
+      padding: 0;
+      background: transparent;
     }
 
     .eyebrow {
@@ -675,7 +696,7 @@ function pairingHtml(pairing) {
   <main>
     <section class="hero" aria-labelledby="title">
       <div class="brand">
-        <div class="mark" aria-hidden="true">WC</div>
+        ${brandMark}
         <div>
           <p class="eyebrow">WristClaw</p>
           <p class="security">Private pairing over your Tailscale network</p>
@@ -683,7 +704,7 @@ function pairingHtml(pairing) {
       </div>
 
       <div>
-        <h1 id="title">Pair your Watch with ${html(pairing.agentName)}</h1>
+        <h1 id="title">Pair WristClaw with your bridge</h1>
         <p class="lead">Scan the QR from the iPhone app, confirm diagnostics, then sync the saved configuration to Apple Watch.</p>
 
         <div class="steps" aria-label="Pairing steps">

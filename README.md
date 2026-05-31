@@ -190,8 +190,8 @@ OPENCLAW_WATCH_PUBLIC_ASK_URL
 Optional display names shown in the Watch chat UI:
 
 ```text
-OPENCLAW_WATCH_USER_DISPLAY_ROLE="freddy"
-OPENCLAW_WATCH_ASSISTANT_DISPLAY_ROLE="nova"
+OPENCLAW_WATCH_USER_DISPLAY_ROLE="you"
+OPENCLAW_WATCH_ASSISTANT_DISPLAY_ROLE="assistant"
 ```
 
 The defaults are placeholders. Users should set their own display names before pairing if they want customized chat labels.
