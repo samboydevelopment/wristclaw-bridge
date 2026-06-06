@@ -436,6 +436,16 @@ open ~/.openclaw/openclaw-watch/pairing.html</code></pre></div></div>
         <p>The repair command verifies local health, checks diagnostics, confirms OpenClaw and Tailscale are available, reapplies the Tailscale Serve route, and regenerates pairing files when needed.</p>
       </section>
 
+      <section class="section" id="uninstall">
+        <h2>Uninstall</h2>
+        <p>Remove the local bridge service and reset pairing on this Mac without touching your OpenClaw sessions.</p>
+        <pre><code>npm run uninstall</code></pre>
+        <p>The command stops the LaunchAgent when present, stops the local bridge process on the configured port, removes the LaunchAgent plist, and moves <code>~/.openclaw/openclaw-watch</code> to a timestamped backup.</p>
+        <pre><code>npm run uninstall -- --purge
+npm run uninstall -- --keep-config</code></pre>
+        <p>Use <code>--purge</code> only when you want to delete local bridge config instead of backing it up. If <code>/watch</code> was used only for WristClaw, remove or replace that route from Tailscale after uninstalling.</p>
+      </section>
+
       <section class="section" id="security">
         <h2>Security Model</h2>
         <ul>

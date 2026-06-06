@@ -14,7 +14,8 @@
     "diagnose": "node scripts/diagnose.mjs",
     "validate:plugin": "python3 \"${OPENCLAW_PLUGIN_VALIDATOR:-${HOME}/.openclaw/agents/main/agent/codex-home/skills/.system/plugin-creator/scripts/validate_plugin.py}\" .",
     "scan:secrets": "node scripts/scan-secrets.mjs",
-    "repair": "node scripts/repair.mjs"
+    "repair": "node scripts/repair.mjs",
+    "uninstall": "node scripts/uninstall.mjs"
   },
   "keywords": [
     "openclaw",

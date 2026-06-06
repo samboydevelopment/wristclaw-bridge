@@ -173,6 +173,37 @@ The repair command:
 
 It does not rotate your token or replace your configured OpenClaw session. If diagnostics reports a missing session after an OpenClaw update, run `npm run setup` to refresh the session configuration.
 
+## Uninstall
+
+To remove the local bridge service and reset pairing on this Mac:
+
+```bash
+npm run uninstall
+```
+
+This command:
+
+- Stops the LaunchAgent when it was installed with `npm run setup:launch-agent`.
+- Stops the local bridge process when it is listening on the configured port.
+- Removes `~/Library/LaunchAgents/com.openclaw.watch-bridge.plist`.
+- Moves `~/.openclaw/openclaw-watch` to a timestamped backup.
+
+It does not delete OpenClaw sessions under `~/.openclaw/agents`, remove this Git repository, or change Tailscale Serve routes. The backup contains pairing files and bearer tokens, so keep it private or delete it when no longer needed.
+
+To delete local bridge config instead of backing it up:
+
+```bash
+npm run uninstall -- --purge
+```
+
+To stop/remove the service while keeping local pairing config in place:
+
+```bash
+npm run uninstall -- --keep-config
+```
+
+If `/watch` was used only for WristClaw, remove or replace that route from Tailscale after uninstalling.
+
 ## Configuration
 
 The setup wizard writes `config.env` with values such as:
@@ -257,6 +288,7 @@ scripts/start-bridge.mjs        Starts the local bridge
 scripts/healthcheck.mjs         Checks the local bridge
 scripts/diagnose.mjs            Prints user-facing bridge diagnostics
 scripts/watch-bridge.mjs        HTTP bridge implementation
+scripts/uninstall.mjs           Stops and removes the local bridge service/config
 references/                     Setup and security notes
 docs/                           GitHub Pages privacy/support pages
 assets/                         Public README visuals
