@@ -60,7 +60,7 @@ function sendJson(res, statusCode, payload) {
 function sendAskError(res, error) {
   const message = error instanceof Error ? error.message : "Unknown bridge error";
   sendJson(res, shortcutFriendlyErrors ? 200 : 500, {
-    text: `WristClaw Bridge error: ${message}`,
+    text: `WristAgent Bridge error: ${message}`,
     status: "error",
     actions: [],
   });
@@ -105,7 +105,7 @@ function commandStatus(commandName, commandArgs, label) {
 }
 
 async function premiumVoiceStatus() {
-  // Detect whether OpenClaw has a premium TTS provider configured under `talk`.
+  // Detect whether local agent has a premium TTS provider configured under `talk`.
   // Used by the iPhone app and Watch settings to decide whether the
   // "ElevenLabs voice" toggle will produce premium audio or fall back to
   // the on-device Apple voice.
@@ -191,11 +191,11 @@ async function buildDiagnostics() {
       id: "auth",
       label: "Pairing token",
       status: token ? "ok" : "warn",
-      message: token ? "Bearer token is configured." : "No bearer token is configured.",
+      message: token ? "Pairing secret is configured." : "No pairing secret is configured.",
     },
     {
       id: "target",
-      label: "OpenClaw target",
+      label: "local agent target",
       status: agentSessionId || agentChannel || agentTo ? "ok" : "warn",
       message: agentSessionId
         ? "A session id is configured."
@@ -205,11 +205,11 @@ async function buildDiagnostics() {
     },
     {
       id: "sessions-file",
-      label: "OpenClaw sessions file",
+      label: "local agent sessions file",
       status: existsSync(sessionsPath) ? "ok" : "warn",
       message: existsSync(sessionsPath) ? sessionsPath : `Not found at ${sessionsPath}`,
     },
-    await commandStatus("openclaw", ["--version"], "OpenClaw CLI"),
+    await commandStatus("openclaw", ["--version"], "local agent CLI"),
     await commandStatus("tailscale", ["status", "--json"], "Tailscale status"),
     await premiumVoiceStatus(),
   ];
@@ -252,9 +252,9 @@ async function buildDiagnostics() {
 }
 
 function diagnosticText(status, checks) {
-  if (status === "ok") return "WristClaw Bridge is ready.";
+  if (status === "ok") return "WristAgent Bridge is ready.";
   const firstProblem = checks.find((check) => check.status === "error" || check.status === "warn");
-  return firstProblem?.message || "WristClaw Bridge needs attention.";
+  return firstProblem?.message || "WristAgent Bridge needs attention.";
 }
 
 function thinkingForMessage(message) {
@@ -316,7 +316,7 @@ function timeoutForMessage(message, requestedTimeout) {
  *
  * Limitation: `infer image describe` is a one-shot model call — it does
  * NOT route through the agent session, so this exchange is NOT persisted
- * in the OpenClaw session store. The Watch will display the reply but
+ * in the local agent session store. The Watch will display the reply but
  * subsequent full-replace refreshes will not preserve photo-turn bubbles.
  */
 /**
@@ -383,7 +383,7 @@ async function compressImageForWatch(srcPath) {
     await runSips(inputPath, outPath, width, quality);
     const info = await stat(outPath);
     finalSize = info.size;
-    console.log(`[WristClaw Bridge] image compress pass ${pass} (${width}px, q${quality}) → ${finalSize} bytes`);
+    console.log(`[WristAgent Bridge] image compress pass ${pass} (${width}px, q${quality}) → ${finalSize} bytes`);
     if (finalSize <= RESPONSE_IMAGE_MAX_BYTES) break;
   }
 
@@ -391,11 +391,11 @@ async function compressImageForWatch(srcPath) {
     // All 3 passes done and still too big. Hand back what we have and let the
     // caller decide; the iPhone path can fall back to transferFile for
     // payloads up to a few MB even if sendMessage's 60 KB ceiling is busted.
-    console.warn(`[WristClaw Bridge] image still ${finalSize} bytes after 3 passes — sending anyway via transferFile`);
+    console.warn(`[WristAgent Bridge] image still ${finalSize} bytes after 3 passes — sending anyway via transferFile`);
   }
 
   const dt = Date.now() - t0;
-  console.log(`[WristClaw Bridge] image compress total: ${srcStat?.size ?? "?"} → ${finalSize} bytes in ${dt} ms`);
+  console.log(`[WristAgent Bridge] image compress total: ${srcStat?.size ?? "?"} → ${finalSize} bytes in ${dt} ms`);
   return outPath;
 }
 
@@ -442,16 +442,16 @@ async function extractOutgoingImage(rawText) {
       const captured = await captureScreenshot();
       tempPathsToDelete.push(captured);
       imagePath = captured;
-      console.log("[WristClaw Bridge] [screenshot] marker matched — captured screen");
+      console.log("[WristAgent Bridge] [screenshot] marker matched — captured screen");
     } catch (err) {
-      console.warn("[WristClaw Bridge] screencapture failed:", err.message);
+      console.warn("[WristAgent Bridge] screencapture failed:", err.message);
       // Surface failure in the reply text so the user notices.
       cleanedText = (cleanedText + " (screenshot failed — grant Screen Recording permission to Node/Terminal in System Settings → Privacy & Security)").trim();
     }
   } else {
     // [image: /path/to/file]
     const imageMatch = text.match(/\[image:\s*([^\]]+)\]/i);
-    // MEDIA:/path/to/file  — OpenClaw native media reference format.
+    // MEDIA:/path/to/file  — local agent native media reference format.
     // Paths may contain spaces (e.g. "Screenshot 2026-05-23 at 6.33.36 PM.png")
     // so match to end-of-line / end-of-string rather than stopping at whitespace.
     const mediaMatch = !imageMatch && text.match(/MEDIA:(\/[^\r\n]*)/);
@@ -462,7 +462,7 @@ async function extractOutgoingImage(rawText) {
       const candidate = imageMatch ? imageMatch[1].trim() : mediaMatch[1].trim();
       if (existsSync(candidate)) {
         imagePath = candidate;
-        console.log(`[WristClaw Bridge] image marker matched — reading ${candidate}`);
+        console.log(`[WristAgent Bridge] image marker matched — reading ${candidate}`);
       } else {
         // macOS screenshot filenames use U+202F (NARROW NO-BREAK SPACE) before
         // "AM"/"PM", but the agent emits an ordinary 0x20 space. Try a few
@@ -477,7 +477,7 @@ async function extractOutgoingImage(rawText) {
         const found = variants.find(v => existsSync(v));
         if (found) {
           imagePath = found;
-          console.log(`[WristClaw Bridge] image marker matched via variant`);
+          console.log(`[WristAgent Bridge] image marker matched via variant`);
         } else {
           // Last resort: scan the parent directory for a name that matches
           // after normalising all whitespace to plain 0x20.
@@ -491,13 +491,13 @@ async function extractOutgoingImage(rawText) {
             );
             if (hit) {
               imagePath = `${dir}/${hit}`;
-              console.log(`[WristClaw Bridge] image marker matched via dir scan`);
+              console.log(`[WristAgent Bridge] image marker matched via dir scan`);
             }
           } catch { /* ignore */ }
           if (!imagePath) {
             const codepoints = [...candidate].map(c => c.codePointAt(0).toString(16)).join(" ");
-            console.warn(`[WristClaw Bridge] image path not found: ${candidate}`);
-            console.warn(`[WristClaw Bridge] codepoints: ${codepoints}`);
+            console.warn(`[WristAgent Bridge] image path not found: ${candidate}`);
+            console.warn(`[WristAgent Bridge] codepoints: ${codepoints}`);
             cleanedText = (cleanedText + ` (image file not found: ${candidate})`).trim();
           }
         }
@@ -512,7 +512,7 @@ async function extractOutgoingImage(rawText) {
     const compressedPath = await compressImageForWatch(imagePath);
     tempPathsToDelete.push(compressedPath);
     const buffer = await readFile(compressedPath);
-    console.log(`[WristClaw Bridge] outgoing image attached (${buffer.length} bytes JPEG)`);
+    console.log(`[WristAgent Bridge] outgoing image attached (${buffer.length} bytes JPEG)`);
     return {
       text: cleanedText || "(image)",
       image: {
@@ -521,7 +521,7 @@ async function extractOutgoingImage(rawText) {
       },
     };
   } catch (err) {
-    console.warn("[WristClaw Bridge] image processing failed:", err.message);
+    console.warn("[WristAgent Bridge] image processing failed:", err.message);
     return { text: cleanedText + " (image compression failed)", image: null };
   } finally {
     for (const p of tempPathsToDelete) {
@@ -593,7 +593,7 @@ function runInferImageDescribe(filePath, prompt) {
         // openclaw infer image describe --json returns:
         //   { ok, capability, outputs: [{ path, text, provider, ... }] }
         // Fall back to a few other common shapes in case the provider
-        // contract changes in a future OpenClaw release.
+        // contract changes in a future local agent release.
         const parsed = JSON.parse(stdout);
         const description = parsed?.outputs?.[0]?.text
           ?? parsed?.outputs?.[0]?.description
@@ -654,10 +654,10 @@ function runOpenClawAgent(message, sessionId = "", requestedTimeout = null) {
 
 function synthesizeTalkSpeech(text) {
   return new Promise((resolve, reject) => {
-    // Keep the payload aligned with OpenClaw's talk.speak contract. Provider
+    // Keep the payload aligned with local agent's talk.speak contract. Provider
     // credentials and voice settings stay in the user's ~/.openclaw/openclaw.json.
     // Older bridge builds sent ElevenLabs latency overrides here, but current
-    // OpenClaw rejects those fields and falls back to Apple voice on the Watch.
+    // local agent rejects those fields and falls back to Apple voice on the Watch.
     const params = JSON.stringify({
       text,
       modelId: "eleven_flash_v2_5",
@@ -713,7 +713,7 @@ async function listOpenClawSessions() {
     loadWatchCreatedSessions(),
   ]);
 
-  // Auto-prune watch-only sessions that never produced an OpenClaw session
+  // Auto-prune watch-only sessions that never produced a local agent session
   // and are past the grace period. Persist back if anything was removed.
   const { kept: liveWatchSessions, removed } = pruneStaleWatchSessions(watchSessions, openClawSessions);
   if (removed > 0) {
@@ -815,7 +815,7 @@ async function saveWatchSessions(sessions) {
 }
 
 /**
- * Drop watch-created sessions that never produced an OpenClaw session
+ * Drop watch-created sessions that never produced a local agent session
  * (i.e. the user named them but never sent a message) and are older
  * than the grace period. Without this, abandoned sessions pile up in
  * watch-sessions.json forever because there's nothing to evict them.
@@ -858,7 +858,7 @@ async function deleteSessionById(id) {
     removedFromWatchFile = true;
   }
 
-  // 2. If the session also exists in OpenClaw, ask the CLI to delete it.
+  // 2. If the session also exists in local agent, ask the CLI to delete it.
   let removedFromOpenClaw = false;
   try {
     const openClawSessions = await loadOpenClawSessionsRaw();
@@ -1095,7 +1095,7 @@ function formatSessionOption(session) {
 }
 
 /**
- * Derive a human-readable title from the OpenClaw session key.
+ * Derive a human-readable title from the local agent session key.
  *
  * Key format: `agent:<agentId>:<channelOrKind>:<kind?>:<...target?>`
  * Examples:
@@ -1279,7 +1279,7 @@ const server = createServer(async (req, res) => {
     if (!assertAuth(req)) {
       sendJson(res, 401, {
         status: "error",
-        text: "Token invalid. Re-pair the WristClaw iPhone app from the WristClaw Bridge setup wizard.",
+        text: "Token invalid. Re-pair the WristAgent iPhone app from the WristAgent Bridge setup wizard.",
         checks: [
           {
             id: "auth",
@@ -1457,5 +1457,5 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(port, host, () => {
-  console.log(`WristClaw Bridge listening on http://${host}:${port}/watch/ask`);
+  console.log(`WristAgent Bridge listening on http://${host}:${port}/watch/ask`);
 });

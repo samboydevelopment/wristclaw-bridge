@@ -1,20 +1,20 @@
-# WristClaw Bridge
+# WristAgent Bridge
 
 <p align="center">
-  <img src="assets/wristclaw-bridge-cover.svg" alt="WristClaw Bridge cover">
+  <img src="assets/wristclaw-bridge-cover.svg" alt="WristAgent Bridge cover">
 </p>
 
-Local Mac bridge for WristClaw, the iPhone and Apple Watch companion for OpenClaw-compatible agents.
+Local Mac bridge for WristAgent, the iPhone and Apple Watch companion for compatible local agents.
 
-WristClaw Bridge keeps the user's setup private by default. It binds to `127.0.0.1`, requires a bearer token, and is designed to be exposed only through Tailscale Serve inside the user's own tailnet.
+WristAgent Bridge keeps the user's setup private by default. It binds to `127.0.0.1`, requires a pairing secret, and is designed to be exposed only through Tailscale Serve inside the user's own tailnet.
 
-This repo is one half of the WristClaw product:
+This repo is one half of the WristAgent product:
 
-- `samboydevelopment/WristClaw`: iPhone, Apple Watch, and widget app.
-- `samboydevelopment/wristclaw-bridge`: local Mac bridge that connects WristClaw to the user's own OpenClaw setup.
+- `samboydevelopment/WristAgent`: iPhone, Apple Watch, and widget app.
+- `samboydevelopment/wristclaw-bridge`: local Mac bridge that connects WristAgent to the user's own local agent setup.
 
 <p align="center">
-  <img src="assets/wristclaw-watch-control.png" alt="Person controlling a Mac from WristClaw on Apple Watch">
+  <img src="assets/wristclaw-watch-control.png" alt="Person controlling a Mac from WristAgent on Apple Watch">
 </p>
 
 <p align="center">
@@ -23,25 +23,25 @@ This repo is one half of the WristClaw product:
 
 ## What It Does
 
-WristClaw Bridge lets the Watch app send short commands to an OpenClaw-compatible agent running on the user's Mac.
+WristAgent Bridge lets the Watch app send short commands to an compatible local agent running on the user's Mac.
 
 - Sends typed, dictated, and quick-action prompts from Apple Watch.
 - Returns compact agent replies sized for the Watch.
 - Supports session selection and session creation from the Watch.
 - Can forward agent screenshots or image attachments back to the Watch.
-- Can serve premium voice audio when OpenClaw is configured with ElevenLabs.
+- Can serve premium voice audio when the local agent is configured with ElevenLabs.
 - Generates private pairing files for the iPhone app: QR code, deep link, and manual payload.
 
 ## How It Works
 
 <p align="center">
-  <img src="assets/wristclaw-bridge-architecture.svg" alt="WristClaw Bridge architecture">
+  <img src="assets/wristclaw-bridge-architecture.svg" alt="WristAgent Bridge architecture">
 </p>
 
 1. Apple Watch captures a command.
-2. WristClaw sends it to the paired iPhone using WatchConnectivity.
+2. WristAgent sends it to the paired iPhone using WatchConnectivity.
 3. iPhone sends an authenticated HTTPS request through the user's Tailscale network.
-4. WristClaw Bridge receives the request on the Mac and calls the local OpenClaw CLI/session.
+4. WristAgent Bridge receives the request on the Mac and calls the local local agent CLI/session.
 5. The response flows back to iPhone and then to Apple Watch.
 
 ## Quick Start
@@ -60,7 +60,7 @@ npm install
 npm run setup
 ```
 
-The guided setup checks Node.js, OpenClaw, Tailscale, local bridge port availability, and the configured OpenClaw session.
+The guided setup checks Node.js, the local agent, Tailscale, local bridge port availability, and the configured local agent session.
 
 It creates private config at:
 
@@ -83,7 +83,7 @@ npm run health
 npm run diagnose
 ```
 
-If the connection breaks after an OpenClaw, Tailscale, or bridge update, run:
+If the connection breaks after an the local agent, Tailscale, or bridge update, run:
 
 ```bash
 npm run repair
@@ -124,23 +124,23 @@ Open the pairing page on the Mac:
 open ~/.openclaw/openclaw-watch/pairing.html
 ```
 
-The QR/deep link uses `wristclaw://pair` and includes the ask URL, health URL, diagnostics URL, agent name, and bearer token. Older `openclaw-watch://pair` links are still accepted by WristClaw for compatibility.
+The QR/deep link uses `wristagent://pair` and includes the ask URL, health URL, diagnostics URL, agent name, and pairing secret.
 
-Do not publish or share the pairing files. They contain a bearer token.
+Do not publish or share the pairing files. They contain a pairing secret.
 
 ## Requirements
 
 - macOS with Node.js installed.
-- OpenClaw installed and authenticated on the Mac.
+- a compatible local agent installed and authenticated on the Mac.
 - Tailscale installed, connected, and signed in.
 - iPhone and Mac connected to the same user-owned Tailscale tailnet.
-- WristClaw installed on iPhone and Apple Watch.
+- WristAgent installed on iPhone and Apple Watch.
 
 ## User Onboarding
 
-Use this flow for a fresh user installing WristClaw.
+Use this flow for a fresh user installing WristAgent.
 
-1. Install and authenticate OpenClaw on the Mac.
+1. Install and authenticate local agent on the Mac.
 2. Clone this bridge repo and run `npm install`.
 3. Run `npm run setup`.
 4. Start the bridge with `npm start`.
@@ -148,7 +148,7 @@ Use this flow for a fresh user installing WristClaw.
 6. Enable Tailscale Serve for `/watch`.
 7. Run `npm run pair`.
 8. Open `~/.openclaw/openclaw-watch/pairing.html`.
-9. Open WristClaw on iPhone and scan the QR.
+9. Open WristAgent on iPhone and scan the QR.
 10. Confirm diagnostics pass and sync the configuration to Apple Watch.
 11. Send a test message from Apple Watch.
 
@@ -156,7 +156,7 @@ QC is complete when the Watch can send a message, receive a response, load messa
 
 ## Repair After Updates
 
-OpenClaw or Tailscale updates can occasionally disturb the local bridge path or the Tailscale Serve route. Use the repair command before re-pairing devices:
+the local agent, Tailscale, updates can occasionally disturb the local bridge path or the Tailscale Serve route. Use the repair command before re-pairing devices:
 
 ```bash
 npm run repair
@@ -171,7 +171,7 @@ The repair command:
 - Regenerates pairing files when a public Tailscale ask URL is configured.
 - Prints whether re-pairing is needed.
 
-It does not rotate your token or replace your configured OpenClaw session. If diagnostics reports a missing session after an OpenClaw update, run `npm run setup` to refresh the session configuration.
+It does not rotate your token or replace your configured local agent session. If diagnostics reports a missing session after an local agent update, run `npm run setup` to refresh the session configuration.
 
 ## Uninstall
 
@@ -188,7 +188,7 @@ This command:
 - Removes `~/Library/LaunchAgents/com.openclaw.watch-bridge.plist`.
 - Moves `~/.openclaw/openclaw-watch` to a timestamped backup.
 
-It does not delete OpenClaw sessions under `~/.openclaw/agents`, remove this Git repository, or change Tailscale Serve routes. The backup contains pairing files and bearer tokens, so keep it private or delete it when no longer needed.
+It does not delete local agent sessions under `~/.openclaw/agents`, remove this Git repository, or change Tailscale Serve routes. The backup contains pairing files and pairing secrets, so keep it private or delete it when no longer needed.
 
 To delete local bridge config instead of backing it up:
 
@@ -202,7 +202,7 @@ To stop/remove the service while keeping local pairing config in place:
 npm run uninstall -- --keep-config
 ```
 
-If `/watch` was used only for WristClaw, remove or replace that route from Tailscale after uninstalling.
+If `/watch` was used only for WristAgent, remove or replace that route from Tailscale after uninstalling.
 
 ## Configuration
 
@@ -257,7 +257,7 @@ The bridge strips the marker before returning the text reply, compresses the ima
 
 ## Optional Voice Replies
 
-By default, WristClaw reads replies using the on-device Apple voice. If OpenClaw is configured with ElevenLabs under `talk.provider` in `~/.openclaw/openclaw.json`, the Watch can use that voice instead.
+By default, WristAgent reads replies using the on-device Apple voice. If the local agent is configured with ElevenLabs under `talk.provider` in `~/.openclaw/openclaw.json`, the Watch can use that voice instead.
 
 Check readiness with:
 
@@ -274,7 +274,7 @@ If diagnostics reports `Premium voice: elevenlabs ready`, enable **ElevenLabs vo
 - Generated config is written to `~/.openclaw/openclaw-watch/config.env` with private file permissions.
 - Tailscale Serve is the recommended exposure path.
 - Tailscale Funnel or public internet exposure is not part of the default flow.
-- `scripts/watch-bridge.mjs` runs local OpenClaw CLI commands by design.
+- `scripts/watch-bridge.mjs` runs local local agent CLI commands by design.
 
 See `references/security.md` for the release checklist and security notes.
 
@@ -296,4 +296,4 @@ assets/                         Public README visuals
 
 ## Disclaimer
 
-WristClaw is an independent third-party companion app. It is not affiliated with, authorized, or endorsed by the creators of the OpenClaw project or Apple Inc.
+WristAgent is an independent third-party companion app. It is not affiliated with, authorized, or endorsed by the creators of the third-party agent project or Apple Inc.

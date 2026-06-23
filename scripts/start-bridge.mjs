@@ -8,7 +8,7 @@ const configDir = process.env.OPENCLAW_WATCH_CONFIG_DIR || resolve(homedir(), ".
 const configPath = process.env.OPENCLAW_WATCH_CONFIG_FILE || resolve(configDir, "config.env");
 
 if (!existsSync(configPath)) {
-  console.error(`WristClaw Bridge config not found at ${configPath}`);
+  console.error(`WristAgent Bridge config not found at ${configPath}`);
   console.error("Run setup first:");
   console.error("  node scripts/setup.mjs setup");
   process.exit(1);

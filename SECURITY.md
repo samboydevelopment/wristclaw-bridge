@@ -1,6 +1,6 @@
 # Security Policy
 
-WristClaw Bridge runs locally on the user's Mac and can send requests to a local OpenClaw-compatible agent session. Treat the bridge as local automation software with access to the same user context as the terminal process that runs it.
+WristAgent Bridge runs locally on the user's Mac and can send requests to a local compatible local agent session. Treat the bridge as local automation software with access to the same user context as the terminal process that runs it.
 
 ## Supported Versions
 
@@ -8,7 +8,7 @@ The `main` branch is the supported development line until the first tagged relea
 
 ## Reporting a Vulnerability
 
-Please open a private security advisory on GitHub or contact Samboy Development through the repository owner profile. Do not publish bearer tokens, pairing files, local logs, or private Tailscale hostnames in public issues.
+Please open a private security advisory on GitHub or contact Samboy Development through the repository owner profile. Do not publish pairing secrets, pairing files, local logs, or private Tailscale hostnames in public issues.
 
 ## Sensitive Files
 
@@ -23,7 +23,7 @@ Never publish generated files from:
 ~/.openclaw/openclaw-watch/*.log
 ```
 
-These may contain bearer tokens, local hostnames, agent session ids, or machine-specific paths.
+These may contain pairing secrets, local hostnames, agent session ids, or machine-specific paths.
 
 ## Default Safeguards
 

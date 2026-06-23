@@ -38,11 +38,11 @@ const repairTailscale = !args.has("--no-tailscale");
 const repairPairing = !args.has("--no-pair");
 const checks = [];
 
-console.log("WristClaw Bridge repair");
+console.log("WristAgent Bridge repair");
 console.log(`Config: ${configPath}`);
 console.log("");
 
-checks.push(await commandCheck("openclaw", ["--version"], "OpenClaw CLI"));
+checks.push(await commandCheck("openclaw", ["--version"], "local agent CLI"));
 checks.push(await commandCheck("tailscale", ["version"], "Tailscale CLI"));
 checks.push(await httpCheck(`${localBaseUrl}/health`, {}, "Local bridge health"));
 checks.push(await diagnosticsCheck());
@@ -110,7 +110,7 @@ async function regeneratePairing() {
     return warnCheck("Pairing files", "No OPENCLAW_WATCH_PUBLIC_ASK_URL configured. Run npm run setup or set the Tailscale URL, then run npm run pair.");
   }
   if (!token) {
-    return errorCheck("Pairing files", "Missing bearer token; run npm run setup.");
+    return errorCheck("Pairing files", "Missing pairing secret; run npm run setup.");
   }
 
   const result = await commandOutput(process.execPath, [setupScript, "pair"]);
@@ -167,7 +167,7 @@ function printSummary(items, { pairingResult }) {
 
   if (errors.length) {
     console.log("Repair result: action required.");
-    console.log("Fix the [error] items above. If OpenClaw sessions changed after an update, run npm run setup to select or detect a valid session.");
+    console.log("Fix the [error] items above. If local agent sessions changed after an update, run npm run setup to select or detect a valid session.");
     return;
   }
 
@@ -232,7 +232,7 @@ function help() {
   npm run repair
   node scripts/repair.mjs [--no-tailscale] [--no-pair]
 
-Repairs common connection drift after OpenClaw, Tailscale, or bridge updates.
-It does not rotate tokens or overwrite the configured OpenClaw session.
+Repairs common connection drift after the local agent, Tailscale, or bridge updates.
+It does not rotate pairing secrets or overwrite the configured local agent session.
 `);
 }

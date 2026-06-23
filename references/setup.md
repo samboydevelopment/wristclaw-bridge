@@ -1,4 +1,4 @@
-# WristClaw Bridge Setup
+# WristAgent Bridge Setup
 
 ## Fresh Clone
 
@@ -26,9 +26,9 @@ npm run setup
 This runs the guided setup wizard. It checks:
 
 - Node.js
-- OpenClaw CLI
+- local agent CLI
 - Tailscale CLI
-- OpenClaw sessions file
+- local agent sessions file
 - local bridge port availability
 
 It creates:
@@ -52,7 +52,7 @@ The config includes:
 - `OPENCLAW_WATCH_PUBLIC_ASK_URL`
 - adaptive timeout defaults
 
-The pairing files are private. They contain the app deep link and bearer token
+The pairing files are private. They contain the app deep link and pairing secret
 needed by the iPhone app. The normal app flow is:
 
 1. Run setup on the Mac.
@@ -91,8 +91,8 @@ npm run health
 npm run diagnose
 ```
 
-`npm run diagnose` calls `/watch/diagnostics` with the configured bearer token
-and prints user-facing checks for the bridge, token, OpenClaw CLI, Tailscale, and
+`npm run diagnose` calls `/watch/diagnostics` with the configured pairing secret
+and prints user-facing checks for the bridge, token, local agent CLI, Tailscale, and
 agent session.
 
 ## Tailscale Serve
@@ -119,12 +119,12 @@ The generated pairing page is:
 ~/.openclaw/openclaw-watch/pairing.html
 ```
 
-Keep it private. The page is branded for WristClaw and contains the
-bearer token required for pairing.
+Keep it private. The page is branded for WristAgent and contains the
+pairing secret required for pairing.
 
 ## Repair After Updates
 
-If OpenClaw, Tailscale, or WristClaw Bridge was updated and the iPhone/Watch can no longer reach the bridge, run:
+If the local agent, Tailscale, or WristAgent Bridge was updated and the iPhone/Watch can no longer reach the bridge, run:
 
 ```bash
 npm run repair
@@ -132,7 +132,7 @@ npm run repair
 
 This keeps the existing token/session, checks local health and diagnostics, reapplies the private Tailscale Serve `/watch` route, and regenerates pairing files when `OPENCLAW_WATCH_PUBLIC_ASK_URL` is configured.
 
-If `npm run repair` reports that the configured OpenClaw session is missing, run:
+If `npm run repair` reports that the configured local agent session is missing, run:
 
 ```bash
 npm run setup

@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>WristClaw Bridge Docs</title>
-  <meta name="description" content="Support documentation for WristClaw Bridge, the local Mac bridge used by the WristClaw iPhone and Apple Watch app.">
-  <meta property="og:title" content="WristClaw Bridge Docs">
-  <meta property="og:description" content="Install, pair, diagnose, and repair the local Mac bridge for WristClaw.">
+  <title>WristAgent Bridge Docs</title>
+  <meta name="description" content="Support documentation for WristAgent Bridge, the local Mac bridge used by the WristAgent iPhone and Apple Watch app.">
+  <meta property="og:title" content="WristAgent Bridge Docs">
+  <meta property="og:description" content="Install, pair, diagnose, and repair the local Mac bridge for WristAgent.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://samboydevelopment.github.io/wristclaw-bridge/">
   <style>
@@ -355,10 +355,10 @@
 </head>
 <body>
   <main class="page">
-    <nav class="nav" aria-label="WristClaw navigation">
+    <nav class="nav" aria-label="WristAgent navigation">
       <a class="brand" href="/wristclaw-bridge/">
-        <img class="mark" src="/wristclaw-bridge/assets/wristclaw-app-logo.png" alt="" aria-hidden="true">
-        <span>WristClaw</span>
+        <img class="mark" src="/wristclaw-bridge/assets/wristagent-app-logo.png" alt="" aria-hidden="true">
+        <span>WristAgent</span>
       </a>
       <div class="nav-center">
         <a class="active" href="/wristclaw-bridge/">Docs</a>
@@ -371,10 +371,10 @@
     </nav>
 
     <header class="hero">
-      <img class="hero-icon" src="/wristclaw-bridge/assets/wristclaw-app-logo.png" alt="WristClaw app icon">
+      <img class="hero-icon" src="/wristclaw-bridge/assets/wristagent-app-logo.png" alt="WristAgent app icon">
       <p class="eyebrow">Support & Bridge Docs</p>
       <h1>Run your Mac from your wrist.</h1>
-      <p class="hero-copy">WristClaw Bridge is the local Mac companion that lets the WristClaw iPhone and Apple Watch app talk to your own OpenClaw-compatible agent over your private network.</p>
+      <p class="hero-copy">WristAgent Bridge is the local Mac companion that lets the WristAgent iPhone and Apple Watch app talk to your own compatible local agent over your private network.</p>
       <div class="hero-actions">
         <a class="primary" href="#quick-start">Start setup</a>
         <a class="secondary" href="/wristclaw-bridge/privacy.html">Read privacy policy</a>
@@ -385,12 +385,12 @@
       <section class="status-row" aria-label="Product summary">
         <div class="status"><strong>Private by default</strong><p>Binds locally, uses bearer-token auth, and is designed for Tailscale Serve inside your own tailnet.</p></div>
         <div class="status"><strong>Watch-first control</strong><p>Send prompts, quick actions, screenshots, image attachments, and compact replies from Apple Watch.</p></div>
-        <div class="status"><strong>Self-repair ready</strong><p>Includes diagnostics and repair commands for OpenClaw, Tailscale, and bridge route changes.</p></div>
+        <div class="status"><strong>Self-repair ready</strong><p>Includes diagnostics and repair commands for the local agent, Tailscale, and bridge route changes.</p></div>
       </section>
 
       <section class="section" id="what-it-does">
         <h2>What It Does</h2>
-        <p>WristClaw Bridge lets the Watch app send short commands to an OpenClaw-compatible agent running on your Mac.</p>
+        <p>WristAgent Bridge lets the Watch app send short commands to an compatible local agent running on your Mac.</p>
         <ul>
           <li>Sends typed, dictated, and quick-action prompts from Apple Watch.</li>
           <li>Returns compact agent replies sized for the Watch.</li>
@@ -402,48 +402,48 @@
 
       <section class="section" id="quick-start">
         <h2>Quick Start</h2>
-        <p>Use this flow on the Mac that runs your OpenClaw-compatible agent.</p>
+        <p>Use this flow on the Mac that runs your compatible local agent.</p>
         <div class="steps">
           <div class="step"><div><h3>Clone and install</h3><p>Install the bridge dependencies locally.</p><pre><code>git clone https://github.com/samboydevelopment/wristclaw-bridge.git
 cd wristclaw-bridge
 npm install</code></pre></div></div>
-          <div class="step"><div><h3>Run setup</h3><p>The setup wizard checks Node.js, OpenClaw, Tailscale, local port availability, and your configured agent session.</p><pre><code>npm run setup</code></pre></div></div>
+          <div class="step"><div><h3>Run setup</h3><p>The setup wizard checks Node.js, the local agent, Tailscale, local port availability, and your configured agent session.</p><pre><code>npm run setup</code></pre></div></div>
           <div class="step"><div><h3>Start and diagnose</h3><p>Start the local bridge, then verify health and user-facing diagnostics.</p><pre><code>npm start
 npm run health
 npm run diagnose</code></pre></div></div>
           <div class="step"><div><h3>Expose privately with Tailscale Serve</h3><p>Expose only the Watch path through your own Tailscale network.</p><pre><code>tailscale serve --bg --set-path /watch http://127.0.0.1:8787</code></pre></div></div>
-          <div class="step"><div><h3>Pair WristClaw</h3><p>Generate pairing files, open the local pairing page, and scan the QR code from the iPhone app.</p><pre><code>npm run pair
+          <div class="step"><div><h3>Pair WristAgent</h3><p>Generate pairing files, open the local pairing page, and scan the QR code from the iPhone app.</p><pre><code>npm run pair
 open ~/.openclaw/openclaw-watch/pairing.html</code></pre></div></div>
         </div>
-        <p class="callout">Do not publish or share generated pairing files. They include the bearer token used by your iPhone and Watch to reach your bridge.</p>
+        <p class="callout">Do not publish or share generated pairing files. They include the pairing secret used by your iPhone and Watch to reach your bridge.</p>
       </section>
 
       <section class="section" id="requirements">
         <h2>Requirements</h2>
         <ul>
           <li>macOS with Node.js installed.</li>
-          <li>OpenClaw installed and authenticated on the Mac.</li>
+          <li>a compatible local agent installed and authenticated on the Mac.</li>
           <li>Tailscale installed, connected, and signed in.</li>
           <li>iPhone and Mac connected to the same user-owned Tailscale tailnet.</li>
-          <li>WristClaw installed on iPhone and Apple Watch.</li>
+          <li>WristAgent installed on iPhone and Apple Watch.</li>
         </ul>
       </section>
 
       <section class="section" id="repair">
         <h2>Repair After Updates</h2>
-        <p>OpenClaw or Tailscale updates can occasionally disturb the local bridge path or the Tailscale Serve route. Use the repair command before re-pairing devices.</p>
+        <p>the local agent, Tailscale, updates can occasionally disturb the local bridge path or the Tailscale Serve route. Use the repair command before re-pairing devices.</p>
         <pre><code>npm run repair</code></pre>
-        <p>The repair command verifies local health, checks diagnostics, confirms OpenClaw and Tailscale are available, reapplies the Tailscale Serve route, and regenerates pairing files when needed.</p>
+        <p>The repair command verifies local health, checks diagnostics, confirms the local agent and Tailscale are available, reapplies the Tailscale Serve route, and regenerates pairing files when needed.</p>
       </section>
 
       <section class="section" id="uninstall">
         <h2>Uninstall</h2>
-        <p>Remove the local bridge service and reset pairing on this Mac without touching your OpenClaw sessions.</p>
+        <p>Remove the local bridge service and reset pairing on this Mac without touching your local agent sessions.</p>
         <pre><code>npm run uninstall</code></pre>
         <p>The command stops the LaunchAgent when present, stops the local bridge process on the configured port, removes the LaunchAgent plist, and moves <code>~/.openclaw/openclaw-watch</code> to a timestamped backup.</p>
         <pre><code>npm run uninstall -- --purge
 npm run uninstall -- --keep-config</code></pre>
-        <p>Use <code>--purge</code> only when you want to delete local bridge config instead of backing it up. If <code>/watch</code> was used only for WristClaw, remove or replace that route from Tailscale after uninstalling.</p>
+        <p>Use <code>--purge</code> only when you want to delete local bridge config instead of backing it up. If <code>/watch</code> was used only for WristAgent, remove or replace that route from Tailscale after uninstalling.</p>
       </section>
 
       <section class="section" id="security">
@@ -460,21 +460,21 @@ npm run uninstall -- --keep-config</code></pre>
       <section class="section" id="links">
         <h2>Documents</h2>
         <div class="link-grid">
-          <a class="link-card" href="/wristclaw-bridge/privacy.html"><strong>Privacy Policy</strong><span>How WristClaw handles local data, photos, speech, pairing tokens, and deletion.</span></a>
+          <a class="link-card" href="/wristclaw-bridge/privacy.html"><strong>Privacy Policy</strong><span>How WristAgent handles local data, photos, speech, pairing tokens, and deletion.</span></a>
           <a class="link-card" href="https://github.com/samboydevelopment/wristclaw-bridge"><strong>Bridge Repository</strong><span>Source code, README, issues, setup details, troubleshooting, and release notes.</span></a>
           <a class="link-card" href="https://github.com/samboydevelopment/wristclaw-bridge/issues"><strong>Support Issues</strong><span>Ask setup questions, report bridge problems, or request documentation improvements.</span></a>
-          <a class="link-card" href="https://github.com/samboydevelopment/WristClaw"><strong>iPhone & Watch App</strong><span>Main WristClaw app repository for the Apple platforms project.</span></a>
+          <a class="link-card" href="https://github.com/samboydevelopment/WristAgent"><strong>iPhone & Watch App</strong><span>Main WristAgent app repository for the Apple platforms project.</span></a>
         </div>
       </section>
     </article>
 
     <section class="closing">
-      <p class="eyebrow">WristClaw Bridge</p>
+      <p class="eyebrow">WristAgent Bridge</p>
       <h2>Private control, public documentation.</h2>
-      <p>The app is designed for public use, but each user runs their own bridge, token, Tailscale route, and OpenClaw-compatible agent setup.</p>
+      <p>The app is designed for public use, but each user runs their own bridge, token, Tailscale route, and compatible local agent setup.</p>
     </section>
 
-    <footer>WristClaw Bridge Docs - Samboy Development</footer>
+    <footer>WristAgent Bridge Docs - Samboy Development</footer>
   </main>
 </body>
 </html>

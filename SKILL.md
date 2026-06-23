@@ -1,11 +1,11 @@
 ---
 name: openclaw-watch
-description: Configure, run, debug, or document the local WristClaw bridge for OpenClaw.
+description: Configure, run, debug, or document the local WristAgent bridge for local agent.
 ---
 
-# WristClaw Bridge
+# WristAgent Bridge
 
-Use when setting up, running, debugging, or documenting the WristClaw bridge.
+Use when setting up, running, debugging, or documenting the WristAgent bridge.
 
 This root `SKILL.md` is kept for compatibility with direct skill-style usage. The plugin entrypoint is `skills/openclaw-watch/SKILL.md`, declared by `.codex-plugin/plugin.json`.
 
@@ -15,7 +15,7 @@ This root `SKILL.md` is kept for compatibility with direct skill-style usage. Th
 2. Start the bridge with `npm start`.
 3. Verify locally with `npm run health`.
 4. Expose it privately with Tailscale Serve using the setup output.
-5. Pair the WristClaw iPhone app with `~/.openclaw/openclaw-watch/pairing-qr.svg` or `pairing.html`.
+5. Pair the WristAgent iPhone app with `~/.openclaw/openclaw-watch/pairing-qr.svg` or `pairing.html`.
 
 Keep the bridge private to the user's tailnet. Do not use Tailscale Funnel unless explicitly requested.
 

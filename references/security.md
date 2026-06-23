@@ -1,6 +1,6 @@
 # Security Notes
 
-WristClaw Bridge runs a local HTTP bridge that can send messages into an OpenClaw agent session.
+WristAgent Bridge runs a local HTTP bridge that can send messages into an local agent agent session.
 
 Default safeguards:
 
@@ -13,7 +13,7 @@ Sensitive behavior:
 
 - `scripts/watch-bridge.mjs` uses `node:child_process` to run the local `openclaw` CLI.
 - This is intentional and should be reviewed explicitly during installation.
-- Do not publish real generated config files, bearer tokens, local session logs, or machine-specific paths.
+- Do not publish real generated config files, pairing secrets, local session logs, or machine-specific paths.
 
 Public release checklist:
 

@@ -1,11 +1,11 @@
 ---
 name: openclaw-watch
-description: Configure, run, debug, or document the local WristClaw bridge for OpenClaw.
+description: Configure, run, debug, or document the local WristAgent bridge for local agent.
 ---
 
-# WristClaw Bridge
+# WristAgent Bridge
 
-Use when setting up, running, debugging, or documenting the WristClaw bridge.
+Use when setting up, running, debugging, or documenting the WristAgent bridge.
 
 ## Workflow
 
@@ -13,7 +13,7 @@ Use when setting up, running, debugging, or documenting the WristClaw bridge.
 2. Start the bridge with `node ../../scripts/start-bridge.mjs` from this skill directory, or `node scripts/start-bridge.mjs` from the plugin root.
 3. Verify locally with `curl http://127.0.0.1:8787/health`.
 4. Expose it privately with Tailscale Serve using the setup output.
-5. Pair the WristClaw iPhone app with `~/.openclaw/openclaw-watch/pairing-qr.svg` or `pairing.html`.
+5. Pair the WristAgent iPhone app with `~/.openclaw/openclaw-watch/pairing-qr.svg` or `pairing.html`.
 
 Keep the bridge private to the user's tailnet. Do not use Tailscale Funnel unless explicitly requested.
 
@@ -27,7 +27,7 @@ Keep the bridge private to the user's tailnet. Do not use Tailscale Funnel unles
 ## Security Model
 
 - The bridge binds to `127.0.0.1` by default.
-- Requests require a bearer token when `OPENCLAW_WATCH_BRIDGE_TOKEN` is set.
+- Requests require a pairing secret when `OPENCLAW_WATCH_BRIDGE_TOKEN` is set.
 - Public internet exposure is not part of the default flow.
 - The bridge executes local `openclaw` CLI commands, so package it as an explicit plugin/service rather than hiding that behavior inside a generic skill install.
 

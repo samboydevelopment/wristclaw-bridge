@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve WristClaw Bridge.
+Thanks for helping improve WristAgent Bridge.
 
 ## Local Setup
 

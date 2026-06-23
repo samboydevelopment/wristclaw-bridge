@@ -25,7 +25,7 @@ if (purge && keepConfig) {
   process.exit(1);
 }
 
-console.log("WristClaw Bridge uninstall");
+console.log("WristAgent Bridge uninstall");
 console.log("");
 
 await stopLaunchAgent();
@@ -35,8 +35,8 @@ await handleConfig();
 
 console.log("");
 console.log("Uninstall complete.");
-console.log("OpenClaw sessions under ~/.openclaw/agents were not changed.");
-console.log("If you enabled Tailscale Serve only for WristClaw, remove or replace the /watch route from Tailscale when you no longer need it.");
+console.log("local agent sessions under ~/.openclaw/agents were not changed.");
+console.log("If you enabled Tailscale Serve only for WristAgent, remove or replace the /watch route from Tailscale when you no longer need it.");
 
 async function stopLaunchAgent() {
   if (!existsSync(launchAgentPath)) {
@@ -78,7 +78,7 @@ async function stopBridgeProcess() {
       || command.includes("watch-bridge.mjs");
 
     if (!looksLikeBridge) {
-      console.log(`[warn] Port ${port} is used by PID ${pid}, but it does not look like WristClaw Bridge: ${command || "unknown command"}`);
+      console.log(`[warn] Port ${port} is used by PID ${pid}, but it does not look like WristAgent Bridge: ${command || "unknown command"}`);
       continue;
     }
 
@@ -118,7 +118,7 @@ async function handleConfig() {
   await mkdir(dirname(backupPath), { recursive: true });
   await rename(configDir, backupPath);
   console.log(`[ok] Moved config to backup: ${backupPath}`);
-  console.log("[note] The backup contains pairing files and bearer tokens. Keep it private or delete it when no longer needed.");
+  console.log("[note] The backup contains pairing files and pairing secrets. Keep it private or delete it when no longer needed.");
 }
 
 async function uniqueBackupPath(basePath) {
@@ -164,7 +164,7 @@ function help() {
   npm run uninstall -- --purge
   npm run uninstall -- --keep-config
 
-Stops the WristClaw Bridge LaunchAgent, stops the local bridge process when it
+Stops the WristAgent Bridge LaunchAgent, stops the local bridge process when it
 is listening on the configured port, removes the LaunchAgent plist, and moves
 ~/.openclaw/openclaw-watch to a timestamped backup by default.
 
