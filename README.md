@@ -29,7 +29,7 @@ WristAgent Bridge lets the Watch app send short commands to an compatible local 
 - Returns compact agent replies sized for the Watch.
 - Supports session selection and session creation from the Watch.
 - Can forward agent screenshots or image attachments back to the Watch.
-- Can serve premium voice audio when the local agent is configured with ElevenLabs.
+- Can serve natural voice audio when the local agent is configured with ElevenLabs.
 - Generates private pairing files for the iPhone app: QR code, deep link, and manual payload.
 
 ## How It Works
@@ -265,7 +265,7 @@ Check readiness with:
 npm run diagnose
 ```
 
-If diagnostics reports `Premium voice: elevenlabs ready`, enable **ElevenLabs voice** in Watch settings.
+If diagnostics reports `Natural voice: elevenlabs ready`, enable **ElevenLabs voice** in Watch settings.
 
 ## Security Model
 

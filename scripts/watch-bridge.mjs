@@ -110,8 +110,10 @@ async function premiumVoiceStatus() {
   // "ElevenLabs voice" toggle will produce premium audio or fall back to
   // the on-device Apple voice.
   const configPath = `${homedir()}/.openclaw/openclaw.json`;
+  // `baseId` stays "premium-voice" for backward compatibility with the
+  // iPhone app's diagnostics matching; the user-facing label is neutral.
   const baseId = "premium-voice";
-  const baseLabel = "Premium voice";
+  const baseLabel = "Natural voice";
 
   if (!existsSync(configPath)) {
     return {
@@ -134,7 +136,7 @@ async function premiumVoiceStatus() {
         id: baseId,
         label: baseLabel,
         status: "warn",
-        message: "No premium provider set in talk.provider. Apple voice will be used.",
+        message: "No natural-voice provider set in talk.provider. Apple voice will be used.",
       };
     }
 

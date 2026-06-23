@@ -144,7 +144,7 @@ async function premiumVoiceCheck() {
   // TTS provider) is configured in local agent. If not, the Watch app will fall
   // back to the on-device Apple voice — this is just informational.
   const configPath = `${homedir()}/.openclaw/openclaw.json`;
-  const label = "Premium voice (ElevenLabs)";
+  const label = "Natural voice (ElevenLabs)";
 
   if (!existsSync(configPath)) {
     return warnCheck(label, "openclaw.json not found — Apple voice will be used");
