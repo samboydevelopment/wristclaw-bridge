@@ -362,9 +362,8 @@
           <li>Your paired iPhone and Apple Watch using Apple's WatchConnectivity framework.</li>
           <li>Your local WristAgent Bridge running on your Mac.</li>
           <li>Your compatible local agent through the bridge running on your Mac.</li>
-          <li>Optional user-configured services used by your local agent setup, such as ElevenLabs for natural voice replies.</li>
         </ul>
-        <p>The recommended setup exposes the bridge through Tailscale Serve inside your own tailnet. Tailscale, the local agent, and ElevenLabs are separate services controlled by their own terms and privacy policies. WristAgent does not provide your credentials to Samboy Development.</p>
+        <p>The recommended setup exposes the bridge through Tailscale Serve inside your own tailnet. Tailscale and the local agent are separate services controlled by their own terms and privacy policies. WristAgent does not provide your credentials to Samboy Development.</p>
       </section>
 
       <section class="section">
@@ -375,7 +374,6 @@
           <li>The bridge URL and diagnostics URLs, stored in local app settings.</li>
           <li>Your display name, agent display name, accent color, voice settings, selected session, and other preferences.</li>
           <li>Recent chat messages, response metadata, image thumbnails, and local message state inside the iPhone and Apple Watch app sandboxes.</li>
-          <li>Temporary audio files used to play voice replies on Apple Watch.</li>
           <li>Temporary image files or thumbnails needed to display screenshots or photo attachments.</li>
         </ul>
         <p>This local data is used to make pairing, messaging, session switching, image display, and voice playback work across launches.</p>
@@ -391,7 +389,7 @@
         <p>WristAgent may request Speech Recognition permission only when you dictate a message from Apple Watch or iPhone-supported flows.</p>
         <p>Speech transcription uses Apple's speech recognition capabilities. WristAgent does not send your voice recordings or transcripts to Samboy Development.</p>
         <h3>Voice Replies</h3>
-        <p>By default, Watch voice replies use Apple's speech synthesis. If you enable ElevenLabs voice and your local agent setup is configured for it, audio responses may be generated through ElevenLabs by your Mac/local agent setup. WristAgent itself does not store or transmit your ElevenLabs API key to Samboy Development.</p>
+        <p>Watch voice replies use Apple's on-device speech synthesis. WristAgent does not use any third-party voice provider.</p>
       </section>
 
       <section class="section">

@@ -104,82 +104,6 @@ function commandStatus(commandName, commandArgs, label) {
   });
 }
 
-async function premiumVoiceStatus() {
-  // Detect whether local agent has a premium TTS provider configured under `talk`.
-  // Used by the iPhone app and Watch settings to decide whether the
-  // "ElevenLabs voice" toggle will produce premium audio or fall back to
-  // the on-device Apple voice.
-  const configPath = `${homedir()}/.openclaw/openclaw.json`;
-  // `baseId` stays "premium-voice" for backward compatibility with the
-  // iPhone app's diagnostics matching; the user-facing label is neutral.
-  const baseId = "premium-voice";
-  const baseLabel = "Natural voice";
-
-  if (!existsSync(configPath)) {
-    return {
-      id: baseId,
-      label: baseLabel,
-      status: "warn",
-      message: "Not configured. The Watch will use the on-device Apple voice.",
-    };
-  }
-
-  try {
-    const raw = await readFile(configPath, "utf8");
-    const config = JSON.parse(raw);
-    const talk = config?.talk ?? {};
-    const provider = String(talk.provider ?? "").toLowerCase();
-    const providerConfig = talk.providers?.[provider];
-
-    if (!provider || provider === "system") {
-      return {
-        id: baseId,
-        label: baseLabel,
-        status: "warn",
-        message: "No natural-voice provider set in talk.provider. Apple voice will be used.",
-      };
-    }
-
-    if (!providerConfig) {
-      return {
-        id: baseId,
-        label: baseLabel,
-        status: "warn",
-        message: `talk.provider is "${provider}" but providers.${provider} is missing.`,
-      };
-    }
-
-    const hasCredential = Boolean(
-      providerConfig.apiKey
-        ?? providerConfig.token
-        ?? providerConfig.key
-        ?? providerConfig.credential
-    );
-
-    if (!hasCredential) {
-      return {
-        id: baseId,
-        label: baseLabel,
-        status: "warn",
-        message: `${provider} configured without an apiKey. Apple voice will be used.`,
-      };
-    }
-
-    return {
-      id: baseId,
-      label: baseLabel,
-      status: "ok",
-      message: `${provider} ready — toggle "ElevenLabs voice" in Watch settings to use it.`,
-    };
-  } catch (error) {
-    return {
-      id: baseId,
-      label: baseLabel,
-      status: "warn",
-      message: error instanceof Error ? error.message : "Could not read openclaw.json",
-    };
-  }
-}
 
 async function buildDiagnostics() {
   const checks = [
@@ -213,7 +137,6 @@ async function buildDiagnostics() {
     },
     await commandStatus("openclaw", ["--version"], "local agent CLI"),
     await commandStatus("tailscale", ["status", "--json"], "Tailscale status"),
-    await premiumVoiceStatus(),
   ];
 
   try {
@@ -654,60 +577,6 @@ function runOpenClawAgent(message, sessionId = "", requestedTimeout = null) {
   });
 }
 
-function synthesizeTalkSpeech(text) {
-  return new Promise((resolve, reject) => {
-    // Keep the payload aligned with local agent's talk.speak contract. Provider
-    // credentials and voice settings stay in the user's ~/.openclaw/openclaw.json.
-    // Older bridge builds sent ElevenLabs latency overrides here, but current
-    // local agent rejects those fields and falls back to Apple voice on the Watch.
-    const params = JSON.stringify({
-      text,
-      modelId: "eleven_flash_v2_5",
-      outputFormat: "mp3_22050_32",
-    });
-    const child = spawn("openclaw", [
-      "gateway",
-      "call",
-      "talk.speak",
-      "--json",
-      "--params",
-      params,
-      "--timeout",
-      "60000",
-    ], {
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-
-    let stdout = "";
-    let stderr = "";
-    child.stdout.setEncoding("utf8");
-    child.stderr.setEncoding("utf8");
-    child.stdout.on("data", (chunk) => {
-      stdout += chunk;
-    });
-    child.stderr.on("data", (chunk) => {
-      stderr += chunk;
-    });
-    child.on("error", reject);
-    child.on("close", (code) => {
-      if (code !== 0) {
-        reject(new Error(stderr || `openclaw gateway call exited with code ${code}`));
-        return;
-      }
-
-      try {
-        const payload = parseGatewayPayload(stdout);
-        if (!payload?.audioBase64) {
-          reject(new Error("talk.speak returned no audio"));
-          return;
-        }
-        resolve(payload);
-      } catch (error) {
-        reject(error);
-      }
-    });
-  });
-}
 
 async function listOpenClawSessions() {
   const [openClawSessions, watchSessions] = await Promise.all([
@@ -1374,32 +1243,6 @@ const server = createServer(async (req, res) => {
     return;
   }
 
-  if (req.method === "POST" && (path === "/watch/talk-speak" || path === "/talk-speak")) {
-    if (!assertAuth(req)) {
-      sendJson(res, 401, { text: "Unauthorized", status: "error", actions: [] });
-      return;
-    }
-
-    try {
-      const body = await readBody(req);
-      const payload = JSON.parse(body);
-      const text = String(payload.text ?? "").trim();
-      if (!text) {
-        sendJson(res, 400, { text: "Missing speech text", status: "error", actions: [] });
-        return;
-      }
-
-      const speech = await synthesizeTalkSpeech(text);
-      sendJson(res, 200, speech);
-    } catch (error) {
-      sendJson(res, 503, {
-        text: error instanceof Error ? error.message : "Unknown talk.speak error",
-        status: "error",
-        actions: [],
-      });
-    }
-    return;
-  }
 
   if (req.method === "POST" && (path === "/watch/ask-with-image" || path === "/ask-with-image")) {
     if (!assertAuth(req)) {

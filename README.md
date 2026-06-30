@@ -29,7 +29,6 @@ WristAgent Bridge lets the Watch app send short commands to an compatible local 
 - Returns compact agent replies sized for the Watch.
 - Supports session selection and session creation from the Watch.
 - Can forward agent screenshots or image attachments back to the Watch.
-- Can serve natural voice audio when the local agent is configured with ElevenLabs.
 - Generates private pairing files for the iPhone app: QR code, deep link, and manual payload.
 
 ## How It Works
@@ -255,17 +254,9 @@ The bridge strips the marker before returning the text reply, compresses the ima
 
 `[screenshot]` uses macOS `screencapture`, which requires Screen Recording permission for the process running the bridge.
 
-## Optional Voice Replies
+## Voice Replies
 
-By default, WristAgent reads replies using the on-device Apple voice. If the local agent is configured with ElevenLabs under `talk.provider` in `~/.openclaw/openclaw.json`, the Watch can use that voice instead.
-
-Check readiness with:
-
-```bash
-npm run diagnose
-```
-
-If diagnostics reports `Natural voice: elevenlabs ready`, enable **ElevenLabs voice** in Watch settings.
+WristAgent reads replies aloud on Apple Watch using the on-device Apple speech voice. No third-party voice provider is used.
 
 ## Security Model
 
